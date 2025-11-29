@@ -25,7 +25,25 @@
     - 将来拡張: PostgreSQL (Neon)
   infrastructure:
     - Frontend: Vercel
-    - Backend: Google Cloud Run
+    - Backend: Render
+```
+
+## デプロイ設定
+```yaml
+本番環境:
+  frontend:
+    - URL: https://meta-ad-checker.vercel.app
+    - プラットフォーム: Vercel
+    - 環境変数: VITE_API_URL
+  backend:
+    - URL: https://meta-ad-checker.onrender.com
+    - プラットフォーム: Render
+    - 環境変数: ALLOWED_ORIGINS, GEMINI_API_KEY
+    - APIドキュメント: https://meta-ad-checker.onrender.com/docs
+
+注意事項:
+  - Render無料プランは15分間非アクティブでスリープ
+  - 初回アクセス時は起動に50秒程度かかる場合あり
 ```
 
 ## 開発環境
