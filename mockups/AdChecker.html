@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メタ広告審査チェッカー - モックアップ</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 50%, #e0f2fe 100%);
+      background-attachment: fixed;
+      color: #0f172a;
+      line-height: 1.6;
+      padding: 48px 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+      text-align: center;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .container > h1 + .section {
+      margin-top: 48px;
+    }
+
+    .section {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 20px rgba(0, 0, 0, 0.03);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: fadeInUp 0.6s ease-out backwards;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 12px rgba(0, 0, 0, 0.08), 0 16px 32px rgba(0, 0, 0, 0.05);
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h2::before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+      border-radius: 2px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #334155;
+      letter-spacing: 0.01em;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      background: #ffffff;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+      transform: translateY(-1px);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .upload-area {
+      border: 3px dashed #10b981;
+      border-radius: 16px;
+      padding: 48px;
+      text-align: center;
+      background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-area::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .upload-area:hover::before {
+      left: 100%;
+    }
+
+    .upload-area:hover {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border-color: #059669;
+      transform: scale(1.02);
+    }
+
+    .upload-icon {
+      font-size: 64px;
+      color: #10b981;
+      margin-bottom: 16px;
+      animation: floatIcon 3s ease-in-out infinite;
+    }
+
+    @keyframes floatIcon {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .upload-text {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    .upload-hint {
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+
+    .image-preview {
+      margin-top: 24px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      animation: scaleIn 0.4s ease-out;
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .image-preview img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .button {
+      padding: 14px 28px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+
+    .button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .button-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      width: 100%;
+      font-size: 1.125rem;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .button-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .button-primary:active {
+      transform: translateY(0);
+    }
+
+    .button-primary:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .button-secondary {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: #475569;
+      margin-top: 16px;
+    }
+
+    .button-secondary:hover {
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+      transform: translateY(-2px);
+    }
+
+    .result-section {
+      display: none;
+    }
+
+    .result-section.visible {
+      display: block;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .score-display {
+      text-align: center;
+      padding: 48px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+      border-radius: 20px;
+      color: #ffffff;
+      margin-bottom: 24px;
+      box-shadow: 0 12px 24px rgba(16, 185, 129, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-display::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .score-number {
+      font-size: 5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .score-label {
+      font-size: 1.5rem;
+      font-weight: 600;
+      position: relative;
+      z-index: 1;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      margin-top: 20px;
+      position: relative;
+      z-index: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .status-approved {
+      background: rgba(255, 255, 255, 0.95);
+      color: #047857;
+    }
+
+    .status-needs-review {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .status-rejected {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .violation-item {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      border-left: 5px solid #ef4444;
+      padding: 20px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .violation-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+    }
+
+    .violation-category {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #dc2626;
+      margin-bottom: 12px;
+    }
+
+    .violation-severity {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-left: 8px;
+      letter-spacing: 0.03em;
+    }
+
+    .severity-high {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .severity-medium {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .severity-low {
+      background: #e0e7ff;
+      color: #4f46e5;
+    }
+
+    .violation-description {
+      color: #475569;
+      font-size: 0.875rem;
+      margin-top: 8px;
+      line-height: 1.7;
+    }
+
+    .recommendation-item {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-left: 5px solid #06b6d4;
+      padding: 20px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .recommendation-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+    }
+
+    .recommendation-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    .recommendation-text {
+      font-size: 0.9375rem;
+      color: #0f172a;
+      margin-bottom: 12px;
+      padding: 12px;
+      background: #ffffff;
+      border-radius: 6px;
+      line-height: 1.6;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .recommendation-reason {
+      font-size: 0.875rem;
+      color: #64748b;
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .info-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 24px;
+      border-radius: 12px;
+      text-align: center;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .info-card:hover {
+      transform: translateY(-4px);
+      border-color: #10b981;
+      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.15);
+    }
+
+    .info-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .info-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: 0.02em;
+    }
+
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-overlay.visible {
+      display: flex;
+    }
+
+    .loading-spinner {
+      width: 64px;
+      height: 64px;
+      border: 5px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #10b981;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      .section {
+        padding: 24px;
+      }
+
+      .upload-area {
+        padding: 32px;
+      }
+
+      .score-number {
+        font-size: 4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>メタ広告審査チェッカー</h1>
+
+    <!-- 広告テキスト入力エリア -->
+    <div class="section">
+      <h2>広告テキスト</h2>
+
+      <label for="headline">見出し（任意）</label>
+      <input type="text" id="headline" placeholder="例: 今すぐダウンロード" maxlength="255">
+
+      <label for="description">説明文（任意）</label>
+      <textarea id="description" placeholder="例: 業界最安値で高品質なサービスを提供します" maxlength="2000"></textarea>
+
+      <label for="cta">CTA（任意）</label>
+      <input type="text" id="cta" placeholder="例: 詳細を見る" maxlength="30">
+    </div>
+
+    <!-- 画像アップロードエリア -->
+    <div class="section">
+      <h2>広告画像（任意）</h2>
+
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">
+          <span class="material-icons" style="font-size: 48px;">cloud_upload</span>
+        </div>
+        <div class="upload-text">画像をドラッグ&ドロップ</div>
+        <div class="upload-hint">または、クリックしてファイルを選択（最大20MB、JPEG/PNG/WebP）</div>
+      </div>
+      <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+
+      <div id="imagePreview" class="image-preview hidden">
+        <img id="previewImg" src="" alt="プレビュー">
+      </div>
+    </div>
+
+    <!-- チェック実行ボタン -->
+    <div class="section">
+      <button class="button button-primary" id="checkButton">AIチェック実行</button>
+      <p style="text-align: center; margin-top: 12px; font-size: 0.875rem; color: #94a3b8;">
+        ※テキストまたは画像の少なくとも1つが必要です
+      </p>
+    </div>
+
+    <!-- 結果表示エリア -->
+    <div class="result-section" id="resultSection">
+      <!-- 総合スコア -->
+      <div class="section">
+        <div class="score-display">
+          <div class="score-number" id="scoreNumber">85%</div>
+          <div class="score-label">総合審査スコア</div>
+          <span class="status-badge status-approved" id="statusBadge">承認される可能性が高い</span>
+        </div>
+      </div>
+
+      <!-- 問題箇所 -->
+      <div class="section">
+        <h2>問題箇所の指摘</h2>
+        <div id="violationsList">
+          <div class="violation-item">
+            <div class="violation-category">
+              画像内テキスト量
+              <span class="violation-severity severity-medium">中</span>
+            </div>
+            <div class="violation-description">
+              画像内のテキスト量が約25%です。Metaは20%以下を推奨しているため、リーチが制限される可能性があります。
+            </div>
+          </div>
+          <div class="violation-item">
+            <div class="violation-category">
+              誇大広告表現
+              <span class="violation-severity severity-low">低</span>
+            </div>
+            <div class="violation-description">
+              「業界最安値」という表現は、根拠がない場合、誇大広告と見なされる可能性があります。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 改善提案 -->
+      <div class="section">
+        <h2>改善提案（コピペで使えます）</h2>
+        <div id="recommendationsList">
+          <div class="recommendation-item">
+            <div class="recommendation-label">修正前</div>
+            <div class="recommendation-text">業界最安値で高品質なサービスを提供します</div>
+            <div class="recommendation-label">修正後</div>
+            <div class="recommendation-text">お手頃価格で高品質なサービスを提供します</div>
+            <div class="recommendation-reason">理由: 「最安値」という絶対表現を避けることで、誇大広告リスクを軽減</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 詳細情報 -->
+      <div class="section">
+        <h2>詳細情報</h2>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-value" id="textOverlay">25%</div>
+            <div class="info-label">画像内テキスト量</div>
+          </div>
+          <div class="info-card">
+            <div class="info-value" id="confidence">92%</div>
+            <div class="info-label">信頼度</div>
+          </div>
+          <div class="info-card">
+            <div class="info-value" id="nsfwStatus">なし</div>
+            <div class="info-label">NSFW検出</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 再チェックボタン -->
+      <div class="section">
+        <button class="button button-secondary" id="recheckButton" style="width: 100%;">
+          修正内容を再チェック
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ローディングオーバーレイ -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <script>
+    // DOM要素取得
+    const uploadArea = document.getElementById('uploadArea');
+    const imageInput = document.getElementById('imageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const checkButton = document.getElementById('checkButton');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const resultSection = document.getElementById('resultSection');
+    const recheckButton = document.getElementById('recheckButton');
+
+    // 画像アップロード処理
+    uploadArea.addEventListener('click', () => {
+      imageInput.click();
+    });
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.style.background = '#ccfbf1';
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.style.background = '#f0fdfa';
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.style.background = '#f0fdfa';
+      const file = e.dataTransfer.files[0];
+      handleImageUpload(file);
+    });
+
+    imageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      handleImageUpload(file);
+    });
+
+    function handleImageUpload(file) {
+      if (!file) return;
+
+      // ファイルサイズチェック（20MB）
+      if (file.size > 20 * 1024 * 1024) {
+        alert('ファイルサイズは20MB以下にしてください');
+        return;
+      }
+
+      // ファイル形式チェック
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        alert('JPEG、PNG、WebP形式の画像のみアップロード可能です');
+        return;
+      }
+
+      // プレビュー表示
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        imagePreview.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // チェック実行
+    checkButton.addEventListener('click', () => {
+      const headline = document.getElementById('headline').value;
+      const description = document.getElementById('description').value;
+      const cta = document.getElementById('cta').value;
+      const hasImage = !imagePreview.classList.contains('hidden');
+
+      // バリデーション
+      if (!headline && !description && !cta && !hasImage) {
+        alert('テキストまたは画像の少なくとも1つを入力してください');
+        return;
+      }
+
+      // ローディング表示
+      loadingOverlay.classList.add('visible');
+
+      // 模擬APIレスポンス（3秒後）
+      setTimeout(() => {
+        loadingOverlay.classList.remove('visible');
+        resultSection.classList.add('visible');
+
+        // スクロールして結果を表示
+        resultSection.scrollIntoView({ behavior: 'smooth' });
+      }, 3000);
+    });
+
+    // 再チェック
+    recheckButton.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>

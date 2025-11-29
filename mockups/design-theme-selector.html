@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デザインテーマ選択 - メタ広告審査チェッカー</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 3rem;
+        }
+
+        .theme-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-card.selected {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 4px #ffd700, 0 15px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-preview {
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            position: relative;
+        }
+
+        .theme-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .theme-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .theme-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .theme-sample-box {
+            flex: 1;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sample-button {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sample-input {
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid;
+            font-size: 14px;
+        }
+
+        .theme-info {
+            padding: 25px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .theme-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .selection-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ffd700;
+            color: #333;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 12px;
+            display: none;
+        }
+
+        .theme-card.selected .selection-badge {
+            display: block;
+        }
+
+        .action-buttons {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .confirm-button {
+            background: white;
+            color: #667eea;
+            padding: 16px 48px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+
+        .confirm-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .confirm-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Theme 1: Professional Business */
+        .theme-1 .theme-preview {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+        .theme-1 .theme-icon {
+            background: white;
+        }
+        .theme-1 .theme-sample-box {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        .theme-1 .sample-button {
+            background: white;
+            color: #1e3a8a;
+        }
+        .theme-1 .sample-input {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* Theme 2: Modern Stylish */
+        .theme-2 .theme-preview {
+            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+            color: white;
+        }
+        .theme-2 .theme-icon {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .theme-2 .theme-sample-box {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        .theme-2 .sample-button {
+            background: white;
+            color: #ec4899;
+        }
+        .theme-2 .sample-input {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* Theme 3: Friendly Approachable */
+        .theme-3 .theme-preview {
+            background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            color: white;
+        }
+        .theme-3 .theme-icon {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .theme-3 .theme-sample-box {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        .theme-3 .sample-button {
+            background: white;
+            color: #10b981;
+        }
+        .theme-3 .sample-input {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* Theme 4: Dark Advanced */
+        .theme-4 .theme-preview {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
+        }
+        .theme-4 .theme-icon {
+            background: #6366f1;
+        }
+        .theme-4 .theme-sample-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .theme-4 .sample-button {
+            background: #6366f1;
+            color: white;
+        }
+        .theme-4 .sample-input {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .selected-theme-number {
+            text-align: center;
+            color: white;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>デザインテーマを選択してください</h1>
+        <p class="subtitle">メタ広告審査チェッカーのデザインテーマを4つから選べます</p>
+
+        <div class="themes-grid">
+            <!-- Theme 1: Professional Business -->
+            <div class="theme-card theme-1" data-theme="1">
+                <div class="selection-badge">✓ 選択中</div>
+                <div class="theme-preview">
+                    <div class="theme-header">
+                        <div class="theme-icon">💼</div>
+                        <div class="theme-title">プロフェッショナル</div>
+                    </div>
+                    <div class="theme-sample-box">
+                        <button class="sample-button">広告をチェック</button>
+                        <input type="text" class="sample-input" placeholder="見出しを入力..." readonly>
+                    </div>
+                </div>
+                <div class="theme-info">
+                    <div class="theme-name">テーマ1: プロフェッショナル・ビジネス</div>
+                    <div class="theme-description">
+                        信頼性と安定感を重視した、ビジネスユースに最適なデザイン。落ち着いたブルーを基調とし、エンタープライズ向けのプロフェッショナルな印象を与えます。
+                    </div>
+                    <div class="color-palette">
+                        <div class="color-swatch" style="background: #1e3a8a;"></div>
+                        <div class="color-swatch" style="background: #3b82f6;"></div>
+                        <div class="color-swatch" style="background: #60a5fa;"></div>
+                        <div class="color-swatch" style="background: #dbeafe;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme 2: Modern Stylish -->
+            <div class="theme-card theme-2" data-theme="2">
+                <div class="selection-badge">✓ 選択中</div>
+                <div class="theme-preview">
+                    <div class="theme-header">
+                        <div class="theme-icon">✨</div>
+                        <div class="theme-title">モダン</div>
+                    </div>
+                    <div class="theme-sample-box">
+                        <button class="sample-button">広告をチェック</button>
+                        <input type="text" class="sample-input" placeholder="見出しを入力..." readonly>
+                    </div>
+                </div>
+                <div class="theme-info">
+                    <div class="theme-name">テーマ2: モダン・スタイリッシュ</div>
+                    <div class="theme-description">
+                        鮮やかなグラデーションと洗練されたデザインで、クリエイティブな雰囲気を演出。トレンド感とスタイリッシュさを求める方に最適です。
+                    </div>
+                    <div class="color-palette">
+                        <div class="color-swatch" style="background: #ec4899;"></div>
+                        <div class="color-swatch" style="background: #8b5cf6;"></div>
+                        <div class="color-swatch" style="background: #c084fc;"></div>
+                        <div class="color-swatch" style="background: #fae8ff;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme 3: Friendly Approachable -->
+            <div class="theme-card theme-3" data-theme="3">
+                <div class="selection-badge">✓ 選択中</div>
+                <div class="theme-preview">
+                    <div class="theme-header">
+                        <div class="theme-icon">🌟</div>
+                        <div class="theme-title">フレンドリー</div>
+                    </div>
+                    <div class="theme-sample-box">
+                        <button class="sample-button">広告をチェック</button>
+                        <input type="text" class="sample-input" placeholder="見出しを入力..." readonly>
+                    </div>
+                </div>
+                <div class="theme-info">
+                    <div class="theme-name">テーマ3: フレンドリー・親しみやすい</div>
+                    <div class="theme-description">
+                        明るく爽やかなグリーンとブルーで、親しみやすさと安心感を表現。初心者にも優しい、アプローチしやすいデザインです。
+                    </div>
+                    <div class="color-palette">
+                        <div class="color-swatch" style="background: #10b981;"></div>
+                        <div class="color-swatch" style="background: #06b6d4;"></div>
+                        <div class="color-swatch" style="background: #67e8f9;"></div>
+                        <div class="color-swatch" style="background: #cffafe;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme 4: Dark Advanced -->
+            <div class="theme-card theme-4" data-theme="4">
+                <div class="selection-badge">✓ 選択中</div>
+                <div class="theme-preview">
+                    <div class="theme-header">
+                        <div class="theme-icon">🚀</div>
+                        <div class="theme-title">ダーク</div>
+                    </div>
+                    <div class="theme-sample-box">
+                        <button class="sample-button">広告をチェック</button>
+                        <input type="text" class="sample-input" placeholder="見出しを入力..." readonly>
+                    </div>
+                </div>
+                <div class="theme-info">
+                    <div class="theme-name">テーマ4: ダーク・先進的</div>
+                    <div class="theme-description">
+                        ダークモードを基調とした先進的なデザイン。目に優しく、長時間の作業にも適しています。テクノロジー感と高級感を演出します。
+                    </div>
+                    <div class="color-palette">
+                        <div class="color-swatch" style="background: #1f2937;"></div>
+                        <div class="color-swatch" style="background: #374151;"></div>
+                        <div class="color-swatch" style="background: #6366f1;"></div>
+                        <div class="color-swatch" style="background: #818cf8;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="confirm-button" id="confirmButton" disabled>選択したテーマで決定</button>
+            <div class="selected-theme-number" id="selectedThemeInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedTheme = null;
+
+        // テーマカードのクリックイベント
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // 全てのカードから選択状態を削除
+                document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+
+                // クリックされたカードを選択状態に
+                this.classList.add('selected');
+
+                // 選択されたテーマ番号を取得
+                selectedTheme = this.getAttribute('data-theme');
+
+                // ボタンを有効化
+                document.getElementById('confirmButton').disabled = false;
+
+                // 選択情報を表示
+                document.getElementById('selectedThemeInfo').textContent =
+                    `テーマ${selectedTheme}を選択中`;
+            });
+        });
+
+        // 決定ボタンのクリックイベント
+        document.getElementById('confirmButton').addEventListener('click', function() {
+            if (selectedTheme) {
+                alert(`テーマ${selectedTheme}を選択しました。\n\nClaude Codeのチャットに戻り、「テーマ${selectedTheme}を選択しました」と伝えてください。`);
+            }
+        });
+    </script>
+</body>
+</html>

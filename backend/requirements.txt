@@ -1,0 +1,35 @@
+# ============================================
+# メタ広告審査チェッカー - バックエンド依存関係
+# Python 3.11+
+# ============================================
+
+# FastAPI Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.19  # ファイルアップロード対応
+
+# Pydantic (型定義・バリデーション)
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# 環境変数管理
+python-dotenv==1.0.1
+
+# 画像処理
+Pillow==11.1.0
+
+# AI API連携
+google-generativeai==0.8.3
+openai==1.59.4  # オプション（Moderation API）
+
+# HTTP クライアント
+httpx==0.28.1
+aiohttp==3.11.11
+
+# CORS
+# (FastAPIに含まれているためインストール不要)
+
+# 開発・テスト用
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>使い方ガイド / FAQ - メタ広告審査チェッカー</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 50%, #e0f2fe 100%);
+      background-attachment: fixed;
+      color: #0f172a;
+      line-height: 1.6;
+      padding: 48px 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+      text-align: center;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 1.125rem;
+      color: #64748b;
+      margin-bottom: 48px;
+      animation: fadeInDown 0.8s ease-out 0.2s backwards;
+    }
+
+    .section {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 20px rgba(0, 0, 0, 0.03);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: fadeInUp 0.6s ease-out backwards;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+    .section:nth-child(5) { animation-delay: 0.4s; }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 12px rgba(0, 0, 0, 0.08), 0 16px 32px rgba(0, 0, 0, 0.05);
+    }
+
+    h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h2::before {
+      content: '';
+      width: 4px;
+      height: 28px;
+      background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+      border-radius: 2px;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1e293b;
+    }
+
+    p {
+      font-size: 1rem;
+      color: #475569;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 16px;
+    }
+
+    ul li {
+      padding-left: 28px;
+      position: relative;
+      margin-bottom: 12px;
+      color: #475569;
+      line-height: 1.7;
+    }
+
+    ul li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #10b981;
+      font-weight: 700;
+      font-size: 1.125rem;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .step-card {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .step-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .step-card:hover::before {
+      left: 100%;
+    }
+
+    .step-card:hover {
+      transform: translateY(-4px);
+      border-color: #10b981;
+      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+    }
+
+    .step-number {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .step-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+
+    .step-description {
+      font-size: 0.9375rem;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .faq-item {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .faq-item:hover {
+      border-color: #10b981;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+      transform: translateX(4px);
+    }
+
+    .faq-question {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .faq-question::before {
+      content: 'Q';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .faq-answer {
+      font-size: 0.9375rem;
+      color: #64748b;
+      line-height: 1.8;
+      padding-left: 40px;
+    }
+
+    .link-card {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      color: #ffffff;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .link-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .link-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(16, 185, 129, 0.3);
+    }
+
+    .link-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .link-description {
+      font-size: 1rem;
+      margin-bottom: 24px;
+      opacity: 0.95;
+      position: relative;
+      z-index: 1;
+    }
+
+    .external-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #059669;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .external-link:hover {
+      background: #ffffff;
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      padding: 14px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-top: 24px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .back-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      .section {
+        padding: 24px;
+      }
+
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .step-card {
+        padding: 20px;
+      }
+
+      .faq-item {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>使い方ガイド / FAQ</h1>
+    <p class="subtitle">メタ広告審査チェッカーの使い方を簡単にご紹介します</p>
+
+    <!-- メタ広告審査の基礎知識 -->
+    <div class="section">
+      <h2>メタ広告審査の基礎知識</h2>
+      <p>メタ広告では、広告が掲載される前に自動審査と人間による審査が行われます。主に以下の5つのポイントがチェックされます。</p>
+      <ul>
+        <li><strong>画像内テキスト量</strong>: 20%以下が推奨（超過するとリーチが制限される可能性）</li>
+        <li><strong>禁止コンテンツ</strong>: アルコール、タバコ、医薬品、武器等の制限対象コンテンツ</li>
+        <li><strong>過度な肌露出・性的表現</strong>: 不適切な画像や表現の禁止</li>
+        <li><strong>ビフォーアフター表現</strong>: ダイエット、美容系広告での誇張表現</li>
+        <li><strong>誇大広告・誤解を招く表現</strong>: 「最安値」「絶対」等の断定表現</li>
+      </ul>
+      <p style="margin-top: 16px;">このアプリでは、これらの審査基準を総合的にチェックし、事前に問題を発見できます。</p>
+    </div>
+
+    <!-- 使い方（3ステップ） -->
+    <div class="section">
+      <h2>使い方（3ステップ）</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-title">テキストを入力</div>
+          <div class="step-description">広告の見出し、説明文、CTAを入力します（任意）</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-title">画像をアップロード</div>
+          <div class="step-description">広告画像をドラッグ&ドロップまたは選択します（任意）</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-title">チェック実行</div>
+          <div class="step-description">30秒以内にAI審査結果と改善提案を取得できます</div>
+        </div>
+      </div>
+      <p style="margin-top: 24px; font-size: 0.9375rem; color: #64748b;">
+        ※テキストまたは画像の少なくとも1つは必須です
+      </p>
+    </div>
+
+    <!-- よくある質問（FAQ） -->
+    <div class="section">
+      <h2>よくある質問（FAQ）</h2>
+
+      <div class="faq-item">
+        <div class="faq-question">テキストだけ、または画像だけでもチェックできますか?</div>
+        <div class="faq-answer">はい、可能です。テキストまたは画像の少なくとも1つがあればチェックできます。両方入力すると、より精度の高い審査予測が得られます。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">アップロードできる画像の形式とサイズは?</div>
+        <div class="faq-answer">JPEG、PNG、WebP形式に対応しており、最大20MBまでアップロード可能です。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">チェック結果はどのくらい正確ですか?</div>
+        <div class="faq-answer">AIベースの審査予測のため、80-90%程度の高精度ですが、100%の保証はできません。Metaの審査基準は頻繁に更新されるため、あくまで参考としてご利用ください。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">アカウント登録は必要ですか?</div>
+        <div class="faq-answer">いいえ、現在はアカウント登録なしで全機能を無料でご利用いただけます。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">チェック履歴は保存されますか?</div>
+        <div class="faq-answer">現在のバージョンでは、チェック履歴は保存されません。将来的にアカウント機能と共に実装予定です。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">審査に落ちた広告を改善する方法は?</div>
+        <div class="faq-answer">チェック結果に表示される「改善提案」セクションに、具体的な修正案と理由が記載されています。それらを参考に修正後、再度チェックすることをおすすめします。</div>
+      </div>
+    </div>
+
+    <!-- メタ広告ポリシーリンク -->
+    <div class="section">
+      <div class="link-card">
+        <div class="link-title">さらに詳しく知りたい方へ</div>
+        <div class="link-description">Meta公式の広告ポリシーをご確認ください</div>
+        <a href="https://www.facebook.com/policies/ads/" target="_blank" class="external-link">
+          Meta広告ポリシーを見る
+          <span class="material-icons" style="font-size: 18px;">open_in_new</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- チェッカーに戻るボタン -->
+    <div style="text-align: center; margin-top: 32px;">
+      <a href="AdChecker.html" class="back-button">
+        <span class="material-icons" style="font-size: 20px;">arrow_back</span>
+        チェッカーに戻る
+      </a>
+    </div>
+  </div>
+</body>
+</html>
