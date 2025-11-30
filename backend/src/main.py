@@ -79,7 +79,7 @@ app = FastAPI(
 # 許可するオリジン（環境変数から取得、デフォルトはローカル開発環境）
 allowed_origins = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3247,http://127.0.0.1:3247"
+    "http://localhost:3247,http://127.0.0.1:3247,https://meta-ad-checker.vercel.app"
 ).split(",")
 
 app.add_middleware(
