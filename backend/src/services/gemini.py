@@ -181,8 +181,57 @@ class GeminiService:
             )
         )
 
+        # セーフティフィルターでブロックされたかチェック
+        if not response.candidates:
+            # ブロックされた理由を取得
+            block_reason = "unknown"
+            if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+                block_reason = str(response.prompt_feedback.block_reason) if response.prompt_feedback.block_reason else "safety"
+
+            logger.warning(f"Gemini response blocked by safety filter: {block_reason}")
+
+            # ブロックされた場合でも、広告審査として「問題あり」の結果を返す
+            return json.dumps({
+                "overall_score": 20,
+                "status": "rejected",
+                "confidence": 0.9,
+                "violations": [{
+                    "category": "prohibited_content",
+                    "severity": "high",
+                    "description": "この広告内容はAIの安全フィルターによってブロックされました。Meta広告ポリシーに違反している可能性が非常に高いです。医療・薬事に関する誇大広告、過度な約束表現、または禁止コンテンツが含まれている可能性があります。",
+                    "location": "text"
+                }],
+                "recommendations": [{
+                    "before": prompt[:100] if len(prompt) > 100 else prompt,
+                    "after": "具体的な効果を断定せず、「個人差があります」などの注意書きを追加してください",
+                    "reason": "医療・薬事に関する100%の効果を約束する表現はMeta広告ポリシーで禁止されています"
+                }],
+                "text_overlay_percentage": 0.0,
+                "nsfw_detected": False,
+                "prohibited_content": ["safety_filter_blocked"]
+            })
+
         # レスポンスのテキストを取得
-        result_text = response.text
+        try:
+            result_text = response.text
+        except ValueError as e:
+            # セーフティフィルターでブロックされた場合
+            logger.warning(f"Gemini response text access failed: {str(e)}")
+            return json.dumps({
+                "overall_score": 20,
+                "status": "rejected",
+                "confidence": 0.9,
+                "violations": [{
+                    "category": "prohibited_content",
+                    "severity": "high",
+                    "description": "この広告内容はAIの安全フィルターによってブロックされました。Meta広告ポリシーに違反している可能性が非常に高いです。",
+                    "location": "text"
+                }],
+                "recommendations": [],
+                "text_overlay_percentage": 0.0,
+                "nsfw_detected": False,
+                "prohibited_content": ["safety_filter_blocked"]
+            })
 
         logger.debug(f"Gemini API response received: {len(result_text)} characters")
 
