@@ -13,7 +13,11 @@ class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8432';
+    // 本番環境では本番APIを使用、それ以外は環境変数またはローカル
+    const isProduction = window.location.hostname === 'meta-ad-checker.vercel.app';
+    const apiUrl = isProduction
+      ? 'https://meta-ad-checker.onrender.com'
+      : (import.meta.env.VITE_API_URL || 'http://localhost:8432');
 
     this.client = axios.create({
       baseURL: apiUrl,
