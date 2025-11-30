@@ -6,6 +6,7 @@
 統一されたエラーレスポンスフォーマットとカスタムHTTP例外を提供
 """
 
+import os
 from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from typing import Optional, Dict, Any
@@ -14,6 +15,29 @@ import logging
 from ..types import ApiError
 
 logger = logging.getLogger(__name__)
+
+
+def get_cors_headers(origin: Optional[str] = None) -> Dict[str, str]:
+    """
+    CORSヘッダーを取得
+    エラーレスポンスでもCORSヘッダーを含めるために使用
+    """
+    allowed_origins = os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:3247,http://127.0.0.1:3247,https://meta-ad-checker.vercel.app"
+    ).split(",")
+
+    # Originが許可リストに含まれている場合のみ、そのOriginを返す
+    if origin and origin in allowed_origins:
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        }
+    # デフォルトは本番環境のOrigin
+    return {
+        "Access-Control-Allow-Origin": "https://meta-ad-checker.vercel.app",
+        "Access-Control-Allow-Credentials": "true",
+    }
 
 
 # --------------------------------------------
@@ -108,31 +132,49 @@ def create_error_response(error_type: str, message: str, status_code: int, detai
 # --------------------------------------------
 
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    """HTTPExceptionのハンドラー"""
+    """HTTPExceptionのハンドラー（CORSヘッダー付き）"""
+    # リクエストからOriginを取得
+    origin = request.headers.get("origin")
+    cors_headers = get_cors_headers(origin)
+
     # カスタムHTTPExceptionの場合は詳細情報を保持
     if isinstance(exc.detail, dict):
         return JSONResponse(
             status_code=exc.status_code,
-            content=exc.detail
+            content=exc.detail,
+            headers=cors_headers
         )
 
     # 通常のHTTPExceptionの場合は標準フォーマットに変換
-    return create_error_response(
-        error_type="http_error",
+    error = ApiError(
+        error="http_error",
         message=str(exc.detail),
-        status_code=exc.status_code
+        details=None
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error.model_dump(),
+        headers=cors_headers
     )
 
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """一般的な例外のハンドラー"""
+    """一般的な例外のハンドラー（CORSヘッダー付き）"""
     logger.error(f"Unexpected error: {type(exc).__name__}: {str(exc)}", exc_info=True)
 
-    return create_error_response(
-        error_type="internal_server_error",
+    # リクエストからOriginを取得
+    origin = request.headers.get("origin")
+    cors_headers = get_cors_headers(origin)
+
+    error = ApiError(
+        error="internal_server_error",
         message="予期しないエラーが発生しました。",
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         details={"error_type": type(exc).__name__}
+    )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=error.model_dump(),
+        headers=cors_headers
     )
 
 
