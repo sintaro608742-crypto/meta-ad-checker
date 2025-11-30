@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # --------------------------------------------
 
-GEMINI_MODEL = "gemini-pro"
+GEMINI_MODEL = "gemini-1.5-flash"
 GEMINI_TIMEOUT = 30  # 30秒
 MAX_RETRIES = 3  # 最大リトライ回数
 INITIAL_RETRY_DELAY = 1  # 初回リトライ待機時間（秒）
