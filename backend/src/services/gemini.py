@@ -185,22 +185,41 @@ class GeminiService:
         is_blocked = False
         block_reason = "unknown"
 
+        # デバッグログ
+        logger.info(f"Gemini response candidates: {bool(response.candidates)}")
+        if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+            logger.info(f"Gemini prompt_feedback: {response.prompt_feedback}")
+
         # ケース1: candidatesが空
         if not response.candidates:
             is_blocked = True
             if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
                 block_reason = str(response.prompt_feedback.block_reason) if response.prompt_feedback.block_reason else "safety"
 
-        # ケース2: candidatesが存在するが、finish_reasonがSAFETY
+        # ケース2: candidatesが存在するが、問題がある場合
         elif response.candidates:
             candidate = response.candidates[0]
-            if hasattr(candidate, 'finish_reason'):
-                # finish_reasonがSAFETYの場合（値は2または"SAFETY"）
+            logger.info(f"Gemini candidate: finish_reason={getattr(candidate, 'finish_reason', 'N/A')}")
+
+            # finish_reasonをチェック
+            if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
                 finish_reason = candidate.finish_reason
-                # finish_reasonがintの場合（2 = SAFETY）またはstrの場合
-                if finish_reason == 2 or str(finish_reason).upper() == "SAFETY" or "SAFETY" in str(finish_reason).upper():
+                finish_reason_str = str(finish_reason).upper()
+                logger.info(f"finish_reason_str: {finish_reason_str}")
+
+                # SAFETYまたはその他のブロック理由
+                if "SAFETY" in finish_reason_str or "RECITATION" in finish_reason_str or "OTHER" in finish_reason_str:
                     is_blocked = True
-                    block_reason = "safety_finish_reason"
+                    block_reason = f"finish_reason:{finish_reason_str}"
+
+            # contentが空またはpartsが空の場合もブロック
+            if not is_blocked:
+                if not hasattr(candidate, 'content') or not candidate.content:
+                    is_blocked = True
+                    block_reason = "empty_content"
+                elif not hasattr(candidate.content, 'parts') or not candidate.content.parts:
+                    is_blocked = True
+                    block_reason = "empty_parts"
 
         if is_blocked:
             logger.warning(f"Gemini response blocked by safety filter: {block_reason}")
