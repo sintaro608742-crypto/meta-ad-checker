@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>改善提案（強化版）- モックアップ</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 50%, #e0f2fe 100%);
+      background-attachment: fixed;
+      color: #0f172a;
+      line-height: 1.6;
+      padding: 48px 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+    }
+
+    .section {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* 優先度別セクション */
+    .priority-section {
+      margin-bottom: 28px;
+    }
+
+    .priority-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    .priority-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .priority-must .priority-icon {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #dc2626;
+    }
+
+    .priority-recommended .priority-icon {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #d97706;
+    }
+
+    .priority-optional .priority-icon {
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+      color: #0284c7;
+    }
+
+    .priority-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .priority-must .priority-title { color: #dc2626; }
+    .priority-recommended .priority-title { color: #d97706; }
+    .priority-optional .priority-title { color: #0284c7; }
+
+    .priority-count {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+      margin-left: auto;
+    }
+
+    .priority-must .priority-count {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .priority-recommended .priority-count {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .priority-optional .priority-count {
+      background: #e0f2fe;
+      color: #0284c7;
+    }
+
+    /* 改善アイテム */
+    .recommendation-item {
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .recommendation-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .priority-must .recommendation-item {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      border-left: 5px solid #ef4444;
+    }
+
+    .priority-must .recommendation-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+    }
+
+    .priority-recommended .recommendation-item {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border-left: 5px solid #f59e0b;
+    }
+
+    .priority-recommended .recommendation-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+    }
+
+    .priority-optional .recommendation-item {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-left: 5px solid #06b6d4;
+    }
+
+    .priority-optional .recommendation-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+    }
+
+    /* ヘッダー行 */
+    .rec-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .rec-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #0f172a;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .rec-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .rec-badge {
+      font-size: 0.7rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-target {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .badge-action {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge-impact {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      font-weight: 800;
+    }
+
+    /* 現在の問題 */
+    .rec-current {
+      margin-bottom: 16px;
+    }
+
+    .rec-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .rec-current-text {
+      background: #ffffff;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #475569;
+      border: 1px solid rgba(0,0,0,0.06);
+      position: relative;
+    }
+
+    .rec-current-text::before {
+      content: '✗';
+      position: absolute;
+      left: -24px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #ef4444;
+      font-weight: bold;
+    }
+
+    /* 修正候補 */
+    .rec-suggestions {
+      margin-bottom: 16px;
+    }
+
+    .suggestion-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #ffffff;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+
+    .suggestion-item.selected {
+      border-color: #10b981;
+      background: #ecfdf5;
+    }
+
+    .suggestion-radio {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #cbd5e1;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .suggestion-item:hover .suggestion-radio {
+      border-color: #10b981;
+    }
+
+    .suggestion-item.selected .suggestion-radio {
+      border-color: #10b981;
+      background: #10b981;
+    }
+
+    .suggestion-item.selected .suggestion-radio::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+    }
+
+    .suggestion-text {
+      flex: 1;
+      font-size: 0.9rem;
+      color: #0f172a;
+    }
+
+    .suggestion-copy {
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f1f5f9;
+      border: none;
+      border-radius: 6px;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .suggestion-copy:hover {
+      background: #10b981;
+      color: white;
+    }
+
+    /* 理由 */
+    .rec-reason {
+      font-size: 0.85rem;
+      color: #64748b;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+
+    .rec-reason strong {
+      color: #475569;
+    }
+
+    /* 画像改善セクション */
+    .image-improvement {
+      background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+      border: 2px solid #c084fc;
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .image-improvement h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #7c3aed;
+      margin-bottom: 20px;
+    }
+
+    .image-improvement h3 .material-icons {
+      font-size: 24px;
+    }
+
+    /* テキストオーバーレイ改善 */
+    .text-overlay-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .overlay-meter {
+      margin-bottom: 20px;
+    }
+
+    .meter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .meter-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .meter-values {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+
+    .meter-current {
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    .meter-arrow {
+      color: #94a3b8;
+    }
+
+    .meter-target {
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    .meter-bar {
+      height: 12px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #10b981 15%, #f59e0b 20%, #ef4444 35%);
+      width: 35%;
+      border-radius: 6px;
+      position: relative;
+    }
+
+    .meter-target-line {
+      position: absolute;
+      left: 15%;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #10b981;
+    }
+
+    .meter-target-line::after {
+      content: '目標';
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      color: #10b981;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* 問題箇所リスト */
+    .problem-areas {
+      margin-bottom: 20px;
+    }
+
+    .problem-areas h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #dc2626;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .problem-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .problem-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #fef2f2;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #991b1b;
+    }
+
+    .problem-item .material-icons {
+      font-size: 18px;
+      color: #ef4444;
+    }
+
+    /* 改善アドバイス */
+    .improvement-advice {
+      background: #f0fdf4;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .improvement-advice h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #16a34a;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .advice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .advice-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: #166534;
+      line-height: 1.5;
+    }
+
+    .advice-item::before {
+      content: '✓';
+      color: #16a34a;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    /* ツール提案 */
+    .tool-suggestion {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-radius: 10px;
+      border: 1px solid #93c5fd;
+    }
+
+    .tool-icon {
+      width: 48px;
+      height: 48px;
+      background: white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .tool-icon .material-icons {
+      font-size: 28px;
+      color: #3b82f6;
+    }
+
+    .tool-info {
+      flex: 1;
+    }
+
+    .tool-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1e40af;
+      margin-bottom: 2px;
+    }
+
+    .tool-desc {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .tool-link {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tool-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    /* 予想スコア改善 */
+    .score-improvement-summary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-radius: 12px;
+      padding: 24px;
+      color: white;
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .score-improvement-summary h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      opacity: 0.9;
+    }
+
+    .score-improvement-value {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .score-improvement-note {
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 640px) {
+      .rec-header {
+        flex-direction: column;
+      }
+
+      .rec-meta {
+        width: 100%;
+      }
+
+      .suggestion-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .suggestion-copy {
+        width: 100%;
+        justify-content: center;
+        margin-top: 8px;
+      }
+
+      .tool-suggestion {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .tool-link {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>改善提案（強化版）</h1>
+    <p class="subtitle">審査通過率を上げるための具体的なアクションプラン</p>
+
+    <!-- テキスト改善セクション -->
+    <div class="section">
+      <h2>
+        <span class="material-icons" style="color: #10b981;">edit_note</span>
+        テキストの改善
+      </h2>
+
+      <!-- 必須の改善 -->
+      <div class="priority-section priority-must">
+        <div class="priority-header">
+          <div class="priority-icon">
+            <span class="material-icons">error</span>
+          </div>
+          <span class="priority-title">必須の改善（これを直さないと審査落ち）</span>
+          <span class="priority-count">2件</span>
+        </div>
+
+        <div class="recommendation-item">
+          <div class="rec-header">
+            <div class="rec-title">① 見出しの誇大表現を修正</div>
+            <div class="rec-meta">
+              <span class="rec-badge badge-target">見出し</span>
+              <span class="rec-badge badge-action">表現変更</span>
+              <span class="rec-badge badge-impact">+20点</span>
+            </div>
+          </div>
+
+          <div class="rec-current">
+            <div class="rec-label">現在の問題</div>
+            <div class="rec-current-text">業界最安値で100%保証！今すぐ申し込み</div>
+          </div>
+
+          <div class="rec-suggestions">
+            <div class="rec-label">修正候補（クリックで選択）</div>
+            <div class="suggestion-list">
+              <div class="suggestion-item selected">
+                <div class="suggestion-radio"></div>
+                <span class="suggestion-text">お手頃価格で安心保証付き！今すぐ申し込み</span>
+                <button class="suggestion-copy">
+                  <span class="material-icons" style="font-size: 14px;">content_copy</span>
+                  コピー
+                </button>
+              </div>
+              <div class="suggestion-item">
+                <div class="suggestion-radio"></div>
+                <span class="suggestion-text">コスパ重視の安心サービス！詳細を見る</span>
+                <button class="suggestion-copy">
+                  <span class="material-icons" style="font-size: 14px;">content_copy</span>
+                  コピー
+                </button>
+              </div>
+              <div class="suggestion-item">
+                <div class="suggestion-radio"></div>
+                <span class="suggestion-text">納得価格の充実サポート！無料で相談</span>
+                <button class="suggestion-copy">
+                  <span class="material-icons" style="font-size: 14px;">content_copy</span>
+                  コピー
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rec-reason">
+            <strong>理由:</strong> 「最安値」「100%」は根拠なき絶対表現としてMetaポリシーに抵触します。具体的な数値や比較データがない限り、このような表現は誇大広告と判定されます。
+          </div>
+        </div>
+
+        <div class="recommendation-item">
+          <div class="rec-header">
+            <div class="rec-title">② 説明文の断定表現を緩和</div>
+            <div class="rec-meta">
+              <span class="rec-badge badge-target">説明文</span>
+              <span class="rec-badge badge-action">表現変更</span>
+              <span class="rec-badge badge-impact">+15点</span>
+            </div>
+          </div>
+
+          <div class="rec-current">
+            <div class="rec-label">現在の問題</div>
+            <div class="rec-current-text">誰でも必ず痩せる！たった3日で-5kg達成</div>
+          </div>
+
+          <div class="rec-suggestions">
+            <div class="rec-label">修正候補（クリックで選択）</div>
+            <div class="suggestion-list">
+              <div class="suggestion-item">
+                <div class="suggestion-radio"></div>
+                <span class="suggestion-text">健康的なダイエットをサポート。多くの方に選ばれています</span>
+                <button class="suggestion-copy">
+                  <span class="material-icons" style="font-size: 14px;">content_copy</span>
+                  コピー
+                </button>
+              </div>
+              <div class="suggestion-item">
+                <div class="suggestion-radio"></div>
+                <span class="suggestion-text">あなたのダイエットを応援。まずは無料カウンセリング</span>
+                <button class="suggestion-copy">
+                  <span class="material-icons" style="font-size: 14px;">content_copy</span>
+                  コピー
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rec-reason">
+            <strong>理由:</strong> 「必ず」「たった〇日で」といった断定的な効果保証は、ダイエット分野では特に厳しく審査されます。個人差を考慮した表現に変更してください。
+          </div>
+        </div>
+      </div>
+
+      <!-- 推奨の改善 -->
+      <div class="priority-section priority-recommended">
+        <div class="priority-header">
+          <div class="priority-icon">
+            <span class="material-icons">tips_and_updates</span>
+          </div>
+          <span class="priority-title">推奨の改善（直すとスコアアップ）</span>
+          <span class="priority-count">1件</span>
+        </div>
+
+        <div class="recommendation-item">
+          <div class="rec-header">
+            <div class="rec-title">③ CTAをより具体的に</div>
+            <div class="rec-meta">
+              <span class="rec-badge badge-target">CTA</span>
+              <span class="rec-badge badge-action">改善</span>
+              <span class="rec-badge badge-impact">+5点</span>
+            </div>
+          </div>
+
+          <div class="rec-current">
+            <div class="rec-label">現在のCTA</div>
+            <div class="rec-current-text">詳細を見る</div>
+          </div>
+
+          <div class="rec-suggestions">
+            <div class="rec-label">修正候補（クリックで選択）</div>
+            <div class="suggestion-list">
+              <div class="suggestion-item">
+                <div class="suggestion-radio"></div>
+                <span class="suggestion-text">無料で体験する</span>
+                <button class="suggestion-copy">
+                  <span class="material-icons" style="font-size: 14px;">content_copy</span>
+                  コピー
+                </button>
+              </div>
+              <div class="suggestion-item">
+                <div class="suggestion-radio"></div>
+                <span class="suggestion-text">今すぐ始める</span>
+                <button class="suggestion-copy">
+                  <span class="material-icons" style="font-size: 14px;">content_copy</span>
+                  コピー
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rec-reason">
+            <strong>理由:</strong> 「詳細を見る」は汎用的すぎます。ユーザーが得られる価値を明確にすると、クリック率が向上し、広告品質スコアも改善されます。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 画像改善セクション -->
+    <div class="section">
+      <h2>
+        <span class="material-icons" style="color: #7c3aed;">image</span>
+        画像の改善
+      </h2>
+
+      <div class="image-improvement">
+        <h3>
+          <span class="material-icons">text_fields</span>
+          画像内テキストの削減が必要
+        </h3>
+
+        <div class="text-overlay-section">
+          <!-- メーター -->
+          <div class="overlay-meter">
+            <div class="meter-header">
+              <span class="meter-label">テキスト占有率</span>
+              <div class="meter-values">
+                <span class="meter-current">現在 35%</span>
+                <span class="meter-arrow">→</span>
+                <span class="meter-target">目標 15%以下</span>
+              </div>
+            </div>
+            <div class="meter-bar">
+              <div class="meter-fill"></div>
+              <div class="meter-target-line"></div>
+            </div>
+          </div>
+
+          <!-- 問題箇所 -->
+          <div class="problem-areas">
+            <h4>
+              <span class="material-icons" style="font-size: 18px;">location_on</span>
+              削減が必要な箇所
+            </h4>
+            <div class="problem-list">
+              <div class="problem-item">
+                <span class="material-icons">crop_free</span>
+                中央の「今だけ50%OFF」バナー（約15%）
+              </div>
+              <div class="problem-item">
+                <span class="material-icons">crop_free</span>
+                下部の長い注意書き（約12%）
+              </div>
+              <div class="problem-item">
+                <span class="material-icons">crop_free</span>
+                左上のキャッチコピー（約8%）
+              </div>
+            </div>
+          </div>
+
+          <!-- 改善アドバイス -->
+          <div class="improvement-advice">
+            <h4>
+              <span class="material-icons" style="font-size: 18px;">lightbulb</span>
+              具体的な改善方法
+            </h4>
+            <div class="advice-list">
+              <div class="advice-item">「50%OFF」は画像から削除し、広告テキスト（説明文）に移動</div>
+              <div class="advice-item">注意書きはランディングページ内に記載</div>
+              <div class="advice-item">ロゴと商品名のみ残し、キャッチコピーは説明文に移動</div>
+              <div class="advice-item">画像は商品/サービスの視覚的魅力に集中させる</div>
+            </div>
+          </div>
+
+          <!-- ツール提案 -->
+          <div class="tool-suggestion">
+            <div class="tool-icon">
+              <span class="material-icons">brush</span>
+            </div>
+            <div class="tool-info">
+              <div class="tool-name">Canvaで編集する</div>
+              <div class="tool-desc">無料で使える画像編集ツール。テキスト削除が簡単にできます</div>
+            </div>
+            <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" class="tool-link">
+              <span class="material-icons" style="font-size: 16px;">open_in_new</span>
+              開く
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 予想スコア改善サマリー -->
+    <div class="score-improvement-summary">
+      <h3>すべての改善を実施した場合</h3>
+      <div class="score-improvement-value">+40点</div>
+      <div class="score-improvement-note">現在 45点 → 予想 85点（承認の可能性が高い）</div>
+    </div>
+
+  </div>
+
+  <script>
+    // コピーボタンの機能
+    document.querySelectorAll('.suggestion-copy').forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = button.parentElement.querySelector('.suggestion-text').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const originalHTML = button.innerHTML;
+          button.innerHTML = '<span class="material-icons" style="font-size: 14px;">check</span> コピー完了';
+          button.style.background = '#10b981';
+          button.style.color = 'white';
+          setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.style.background = '';
+            button.style.color = '';
+          }, 2000);
+        });
+      });
+    });
+
+    // 選択の切り替え
+    document.querySelectorAll('.suggestion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const parent = item.closest('.suggestion-list');
+        parent.querySelectorAll('.suggestion-item').forEach(i => i.classList.remove('selected'));
+        item.classList.add('selected');
+      });
+    });
+  </script>
+</body>
+</html>

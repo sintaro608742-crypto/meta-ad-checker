@@ -19,6 +19,12 @@ from ..types import (
     ViolationCategory,
     ViolationSeverity,
     ViolationLocation,
+    RecommendationPriority,
+    RecommendationActionType,
+    RecommendationTarget,
+    ImageImprovement,
+    ImageImprovementTextOverlay,
+    ImageImprovementContentIssue,
 )
 from ..utils.errors import validate_request_has_content
 from ..utils.image import process_and_validate_image, encode_image_to_base64
@@ -211,15 +217,112 @@ def _build_response_from_ai_result(
             )
         )
 
-    # Recommendationsの構築
+    # Recommendationsの構築（新形式対応）
     recommendations = []
+    # アクションタイプのマッピング
+    action_type_mapping = {
+        "change": "replace",
+        "modify": "rephrase",
+        "delete": "remove",
+        "move": "relocate",
+    }
+    # 優先度のマッピング
+    priority_mapping = {
+        "high": "must",
+        "medium": "recommended",
+        "low": "optional",
+        "critical": "must",
+    }
+
     for r in ai_result.get("recommendations", []):
-        recommendations.append(
-            Recommendation(
-                before=r.get("before", ""),
-                after=r.get("after", ""),
-                reason=r.get("reason", ""),
+        # 新形式の場合
+        if "target" in r and "suggestions" in r:
+            # target の安全な変換
+            raw_target = r.get("target", "text")
+            try:
+                target = RecommendationTarget(raw_target)
+            except ValueError:
+                logger.warning(f"Unknown target: {raw_target}, using 'text'")
+                target = RecommendationTarget.TEXT
+
+            # action_type の安全な変換
+            raw_action_type = r.get("action_type", "replace")
+            mapped_action_type = action_type_mapping.get(raw_action_type, raw_action_type)
+            try:
+                action_type = RecommendationActionType(mapped_action_type)
+            except ValueError:
+                logger.warning(f"Unknown action_type: {raw_action_type}, using 'replace'")
+                action_type = RecommendationActionType.REPLACE
+
+            # priority の安全な変換
+            raw_priority = r.get("priority", "recommended")
+            mapped_priority = priority_mapping.get(raw_priority, raw_priority)
+            try:
+                priority = RecommendationPriority(mapped_priority)
+            except ValueError:
+                logger.warning(f"Unknown priority: {raw_priority}, using 'recommended'")
+                priority = RecommendationPriority.RECOMMENDED
+
+            recommendations.append(
+                Recommendation(
+                    target=target,
+                    target_field=r.get("target_field"),
+                    related_violation_category=r.get("related_violation_category"),
+                    action_type=action_type,
+                    priority=priority,
+                    estimated_score_impact=max(0, min(100, r.get("estimated_score_impact", 10))),
+                    title=r.get("title", "改善提案"),
+                    before=r.get("before", ""),
+                    suggestions=r.get("suggestions", []),
+                    reason=r.get("reason", ""),
+                )
             )
+        else:
+            # 旧形式からの変換（後方互換性）
+            recommendations.append(
+                Recommendation(
+                    target=RecommendationTarget.TEXT,
+                    target_field=None,
+                    related_violation_category=None,
+                    action_type=RecommendationActionType.REPLACE,
+                    priority=RecommendationPriority.RECOMMENDED,
+                    estimated_score_impact=10,
+                    title="改善提案",
+                    before=r.get("before", ""),
+                    suggestions=[r.get("after", "")] if r.get("after") else [],
+                    reason=r.get("reason", ""),
+                )
+            )
+
+    # ImageImprovementの構築
+    image_improvement = None
+    if ai_result.get("image_improvement"):
+        img_imp = ai_result["image_improvement"]
+        text_overlay = None
+        content_issues = []
+
+        if img_imp.get("text_overlay"):
+            to = img_imp["text_overlay"]
+            text_overlay = ImageImprovementTextOverlay(
+                current_percentage=to.get("current_percentage", 0),
+                target_percentage=to.get("target_percentage", 15),
+                problematic_areas=to.get("problematic_areas", []),
+                removal_suggestions=to.get("removal_suggestions", []),
+            )
+
+        if img_imp.get("content_issues"):
+            for ci in img_imp["content_issues"]:
+                content_issues.append(
+                    ImageImprovementContentIssue(
+                        issue=ci.get("issue", ""),
+                        location=ci.get("location", ""),
+                        alternatives=ci.get("alternatives", []),
+                    )
+                )
+
+        image_improvement = ImageImprovement(
+            text_overlay=text_overlay,
+            content_issues=content_issues,
         )
 
     # 禁止コンテンツのリスト
@@ -284,5 +387,6 @@ def _build_response_from_ai_result(
         text_overlay_percentage=ai_result.get("text_overlay_percentage"),
         nsfw_detected=nsfw_detected,
         prohibited_content=prohibited_content,
-        api_used="gemini-2.0-flash-exp",
+        api_used="gemini-2.0-flash",
+        image_improvement=image_improvement,
     )

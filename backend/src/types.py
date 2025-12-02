@@ -93,11 +93,72 @@ class Violation(BaseModel):
     location: ViolationLocation
 
 
+class RecommendationPriority(str, Enum):
+    """改善提案の優先度"""
+    MUST = "must"
+    RECOMMENDED = "recommended"
+    OPTIONAL = "optional"
+
+
+class RecommendationActionType(str, Enum):
+    """改善アクションの種類"""
+    REPLACE = "replace"
+    REMOVE = "remove"
+    REDUCE = "reduce"
+    REPHRASE = "rephrase"
+    RELOCATE = "relocate"
+
+
+class RecommendationTarget(str, Enum):
+    """改善対象"""
+    TEXT = "text"
+    IMAGE = "image"
+
+
 class Recommendation(BaseModel):
-    """改善提案"""
+    """改善提案（強化版）"""
+    # 対象情報
+    target: RecommendationTarget = Field(..., description="修正対象（text/image）")
+    target_field: Optional[str] = Field(None, description="具体的フィールド（headline/description/cta）")
+    related_violation_category: Optional[str] = Field(None, description="関連する違反カテゴリ")
+
+    # アクションと優先度
+    action_type: RecommendationActionType = Field(..., description="アクションタイプ")
+    priority: RecommendationPriority = Field(..., description="優先度（must/recommended/optional）")
+    estimated_score_impact: int = Field(..., ge=0, le=100, description="予想スコア改善（0-100）")
+
+    # 改善内容
+    title: str = Field(..., description="改善タイトル")
     before: str = Field(..., description="修正前")
-    after: str = Field(..., description="修正後")
+    suggestions: list[str] = Field(default_factory=list, description="修正候補（複数）")
     reason: str = Field(..., description="理由")
+
+    # 後方互換性のためafterプロパティを追加
+    @property
+    def after(self) -> str:
+        """後方互換性: suggestionsの最初の要素を返す"""
+        return self.suggestions[0] if self.suggestions else ""
+
+
+class ImageImprovementTextOverlay(BaseModel):
+    """画像内テキスト改善情報"""
+    current_percentage: float = Field(..., ge=0, le=100, description="現在のテキスト量（%）")
+    target_percentage: float = Field(default=15.0, ge=0, le=100, description="目標テキスト量（%）")
+    problematic_areas: list[str] = Field(default_factory=list, description="問題箇所リスト")
+    removal_suggestions: list[str] = Field(default_factory=list, description="削除・移動の提案")
+
+
+class ImageImprovementContentIssue(BaseModel):
+    """画像コンテンツ問題"""
+    issue: str = Field(..., description="問題の概要")
+    location: str = Field(..., description="問題箇所")
+    alternatives: list[str] = Field(default_factory=list, description="代替案")
+
+
+class ImageImprovement(BaseModel):
+    """画像改善ガイド"""
+    text_overlay: Optional[ImageImprovementTextOverlay] = Field(None, description="テキストオーバーレイ改善")
+    content_issues: list[ImageImprovementContentIssue] = Field(default_factory=list, description="コンテンツ問題リスト")
 
 
 class AdCheckResponse(BaseModel):
@@ -118,6 +179,9 @@ class AdCheckResponse(BaseModel):
     nsfw_detected: bool = Field(default=False)
     prohibited_content: list[str] = Field(default_factory=list)
 
+    # 画像改善ガイド（新規追加）
+    image_improvement: Optional[ImageImprovement] = Field(None, description="画像改善ガイド")
+
     # メタ情報
     checked_at: str = Field(..., description="チェック日時（ISO 8601形式）")
     api_used: str = Field(..., description="使用したAI API")
@@ -134,6 +198,7 @@ class AdCheckResponse(BaseModel):
         nsfw_detected: bool,
         prohibited_content: list[str],
         api_used: str,
+        image_improvement: Optional[ImageImprovement] = None,
     ) -> "AdCheckResponse":
         """タイムスタンプ付きでレスポンスを作成"""
         return cls(
@@ -145,6 +210,7 @@ class AdCheckResponse(BaseModel):
             text_overlay_percentage=text_overlay_percentage,
             nsfw_detected=nsfw_detected,
             prohibited_content=prohibited_content,
+            image_improvement=image_improvement,
             checked_at=datetime.utcnow().isoformat() + "Z",
             api_used=api_used,
         )

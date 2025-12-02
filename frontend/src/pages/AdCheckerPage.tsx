@@ -9,7 +9,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Divider,
   IconButton,
 } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
@@ -22,6 +21,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
+import { EnhancedRecommendations } from '../components/EnhancedRecommendations';
 
 export const AdCheckerPage = () => {
   const {
@@ -457,83 +457,12 @@ export const AdCheckerPage = () => {
               </Paper>
             )}
 
-            {/* 改善提案 */}
-            {result.recommendations.length > 0 && (
-              <Paper elevation={2} sx={{ p: 4, borderRadius: 4, mb: 3 }}>
-                <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
-                  改善提案（コピペで使えます）
-                </Typography>
-                <Stack spacing={2}>
-                  {result.recommendations.map((recommendation, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                        borderLeft: '5px solid #06b6d4',
-                        p: 2.5,
-                        borderRadius: 2,
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateX(4px)',
-                          boxShadow: '0 4px 12px rgba(6, 182, 212, 0.15)',
-                        },
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 700,
-                          color: 'text.secondary',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                        }}
-                      >
-                        修正前
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          my: 1,
-                          p: 1.5,
-                          bgcolor: 'white',
-                          borderRadius: 1,
-                          boxShadow: 1,
-                        }}
-                      >
-                        {recommendation.before}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 700,
-                          color: 'text.secondary',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                        }}
-                      >
-                        修正後
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          my: 1,
-                          p: 1.5,
-                          bgcolor: 'white',
-                          borderRadius: 1,
-                          boxShadow: 1,
-                        }}
-                      >
-                        {recommendation.after}
-                      </Typography>
-                      <Divider sx={{ my: 1.5 }} />
-                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                        理由: {recommendation.reason}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </Paper>
-            )}
+            {/* 改善提案（強化版） */}
+            <EnhancedRecommendations
+              recommendations={result.recommendations}
+              imageImprovement={result.image_improvement}
+              currentScore={result.overall_score}
+            />
 
             {/* 詳細情報 */}
             <Paper elevation={2} sx={{ p: 4, borderRadius: 4, mb: 3 }}>

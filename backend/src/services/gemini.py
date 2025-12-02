@@ -163,13 +163,24 @@ class GeminiService:
                     "location": "text"
                 }],
                 "recommendations": [{
+                    "target": "text",
+                    "target_field": "description",
+                    "related_violation_category": "prohibited_content",
+                    "action_type": "rephrase",
+                    "priority": "must",
+                    "estimated_score_impact": 50,
+                    "title": "禁止コンテンツの表現を修正",
                     "before": prompt[:100] if len(prompt) > 100 else prompt,
-                    "after": "具体的な効果を断定せず、「個人差があります」などの注意書きを追加してください",
+                    "suggestions": [
+                        "具体的な効果を断定せず、「個人差があります」などの注意書きを追加してください",
+                        "医療・薬事に関する効果を約束する表現を避けてください"
+                    ],
                     "reason": "医療・薬事に関する100%の効果を約束する表現はMeta広告ポリシーで禁止されています"
                 }],
                 "text_overlay_percentage": 0.0,
                 "nsfw_detected": False,
-                "prohibited_content": ["safety_filter_blocked", reason]
+                "prohibited_content": ["safety_filter_blocked", reason],
+                "image_improvement": None
             })
 
         try:

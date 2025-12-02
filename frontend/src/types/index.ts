@@ -38,10 +38,53 @@ export interface Violation {
   location: 'text' | 'image' | 'both';
 }
 
+// 改善提案の優先度
+export type RecommendationPriority = 'must' | 'recommended' | 'optional';
+
+// 改善アクションの種類
+export type RecommendationActionType = 'replace' | 'remove' | 'reduce' | 'rephrase' | 'relocate';
+
+// 改善対象
+export type RecommendationTarget = 'text' | 'image';
+
+// 改善提案（強化版）
 export interface Recommendation {
+  // 対象情報
+  target: RecommendationTarget;
+  target_field?: string | null;
+  related_violation_category?: string | null;
+
+  // アクションと優先度
+  action_type: RecommendationActionType;
+  priority: RecommendationPriority;
+  estimated_score_impact: number;
+
+  // 改善内容
+  title: string;
   before: string;
-  after: string;
+  suggestions: string[];
   reason: string;
+}
+
+// 画像内テキスト改善情報
+export interface ImageImprovementTextOverlay {
+  current_percentage: number;
+  target_percentage: number;
+  problematic_areas: string[];
+  removal_suggestions: string[];
+}
+
+// 画像コンテンツ問題
+export interface ImageImprovementContentIssue {
+  issue: string;
+  location: string;
+  alternatives: string[];
+}
+
+// 画像改善ガイド
+export interface ImageImprovement {
+  text_overlay?: ImageImprovementTextOverlay | null;
+  content_issues: ImageImprovementContentIssue[];
 }
 
 export interface AdCheckResponse {
@@ -60,6 +103,9 @@ export interface AdCheckResponse {
   text_overlay_percentage?: number; // 0-100 (画像がある場合)
   nsfw_detected: boolean;
   prohibited_content: string[];
+
+  // 画像改善ガイド（新規追加）
+  image_improvement?: ImageImprovement | null;
 
   // メタ情報
   checked_at: string; // ISO 8601 format
