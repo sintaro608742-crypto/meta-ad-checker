@@ -171,13 +171,43 @@ def _build_response_from_ai_result(
     """
     # Violationsの構築
     violations = []
+    # カテゴリのマッピング（AIが返す値 → enum値）
+    category_mapping = {
+        "misleading_claims": "misleading",
+        "misleading_claim": "misleading",
+        "false_claims": "misleading",
+        "exaggerated_claims": "misleading",
+        "prohibited": "prohibited_content",
+        "sexual": "nsfw",
+        "adult": "nsfw",
+    }
     for v in ai_result.get("violations", []):
+        raw_category = v.get("category", "misleading")
+        # マッピングがあれば変換、なければそのまま使用
+        mapped_category = category_mapping.get(raw_category, raw_category)
+        # それでも無効な場合はデフォルト値を使用
+        try:
+            category = ViolationCategory(mapped_category)
+        except ValueError:
+            logger.warning(f"Unknown violation category: {raw_category}, using 'misleading'")
+            category = ViolationCategory.MISLEADING
+
+        try:
+            severity = ViolationSeverity(v.get("severity", "medium"))
+        except ValueError:
+            severity = ViolationSeverity.MEDIUM
+
+        try:
+            location = ViolationLocation(v.get("location", "text"))
+        except ValueError:
+            location = ViolationLocation.TEXT
+
         violations.append(
             Violation(
-                category=ViolationCategory(v.get("category", "misleading")),
-                severity=ViolationSeverity(v.get("severity", "medium")),
+                category=category,
+                severity=severity,
                 description=v.get("description", ""),
-                location=ViolationLocation(v.get("location", "text")),
+                location=location,
             )
         )
 
@@ -235,7 +265,11 @@ def _build_response_from_ai_result(
     elif status_str == "rejected" and overall_score > 49:
         status_str = "needs_review"
 
-    status = AdStatus(status_str)
+    try:
+        status = AdStatus(status_str)
+    except ValueError:
+        logger.warning(f"Unknown status: {status_str}, using 'needs_review'")
+        status = AdStatus.NEEDS_REVIEW
 
     # 信頼度の検証
     confidence = max(0.0, min(1.0, ai_result.get("confidence", 0.8)))
