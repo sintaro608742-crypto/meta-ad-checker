@@ -175,7 +175,7 @@ def _build_response_from_ai_result(
     Returns:
         AdCheckResponse: 構造化されたレスポンス
     """
-    # Violationsの構築
+    # Violationsの構築（nullチェック）
     violations = []
     # カテゴリのマッピング（AIが返す値 → enum値）
     category_mapping = {
@@ -187,7 +187,9 @@ def _build_response_from_ai_result(
         "sexual": "nsfw",
         "adult": "nsfw",
     }
-    for v in ai_result.get("violations", []):
+    violations_raw = ai_result.get("violations")
+    violations_list = violations_raw if isinstance(violations_raw, list) else []
+    for v in violations_list:
         raw_category = v.get("category", "misleading")
         # マッピングがあれば変換、なければそのまま使用
         mapped_category = category_mapping.get(raw_category, raw_category)
@@ -217,7 +219,7 @@ def _build_response_from_ai_result(
             )
         )
 
-    # Recommendationsの構築（新形式対応）
+    # Recommendationsの構築（新形式対応、nullチェック）
     recommendations = []
     # アクションタイプのマッピング
     action_type_mapping = {
@@ -234,7 +236,9 @@ def _build_response_from_ai_result(
         "critical": "must",
     }
 
-    for r in ai_result.get("recommendations", []):
+    recommendations_raw = ai_result.get("recommendations")
+    recommendations_list = recommendations_raw if isinstance(recommendations_raw, list) else []
+    for r in recommendations_list:
         # 新形式の場合
         if "target" in r and "suggestions" in r:
             # target の安全な変換
@@ -263,6 +267,10 @@ def _build_response_from_ai_result(
                 logger.warning(f"Unknown priority: {raw_priority}, using 'recommended'")
                 priority = RecommendationPriority.RECOMMENDED
 
+            # suggestionsがnullの場合に空リストにフォールバック
+            suggestions_raw = r.get("suggestions")
+            suggestions_list = suggestions_raw if isinstance(suggestions_raw, list) else []
+
             recommendations.append(
                 Recommendation(
                     target=target,
@@ -270,15 +278,18 @@ def _build_response_from_ai_result(
                     related_violation_category=r.get("related_violation_category"),
                     action_type=action_type,
                     priority=priority,
-                    estimated_score_impact=max(0, min(100, r.get("estimated_score_impact", 10))),
-                    title=r.get("title", "改善提案"),
-                    before=r.get("before", ""),
-                    suggestions=r.get("suggestions", []),
-                    reason=r.get("reason", ""),
+                    estimated_score_impact=max(0, min(100, r.get("estimated_score_impact") or 10)),
+                    title=r.get("title") or "改善提案",
+                    before=r.get("before") or "",
+                    suggestions=suggestions_list,
+                    reason=r.get("reason") or "",
                 )
             )
         else:
             # 旧形式からの変換（後方互換性）
+            after_text = r.get("after")
+            suggestions_from_old = [after_text] if after_text else []
+
             recommendations.append(
                 Recommendation(
                     target=RecommendationTarget.TEXT,
@@ -288,45 +299,56 @@ def _build_response_from_ai_result(
                     priority=RecommendationPriority.RECOMMENDED,
                     estimated_score_impact=10,
                     title="改善提案",
-                    before=r.get("before", ""),
-                    suggestions=[r.get("after", "")] if r.get("after") else [],
-                    reason=r.get("reason", ""),
+                    before=r.get("before") or "",
+                    suggestions=suggestions_from_old,
+                    reason=r.get("reason") or "",
                 )
             )
 
     # ImageImprovementの構築
     image_improvement = None
-    if ai_result.get("image_improvement"):
-        img_imp = ai_result["image_improvement"]
+    img_imp = ai_result.get("image_improvement")
+    if img_imp and isinstance(img_imp, dict):
         text_overlay = None
         content_issues = []
 
-        if img_imp.get("text_overlay"):
-            to = img_imp["text_overlay"]
+        to = img_imp.get("text_overlay")
+        if to and isinstance(to, dict):
+            # リストフィールドのnullチェック
+            problematic_areas_raw = to.get("problematic_areas")
+            problematic_areas = problematic_areas_raw if isinstance(problematic_areas_raw, list) else []
+            removal_suggestions_raw = to.get("removal_suggestions")
+            removal_suggestions = removal_suggestions_raw if isinstance(removal_suggestions_raw, list) else []
+
             text_overlay = ImageImprovementTextOverlay(
-                current_percentage=to.get("current_percentage", 0),
-                target_percentage=to.get("target_percentage", 15),
-                problematic_areas=to.get("problematic_areas", []),
-                removal_suggestions=to.get("removal_suggestions", []),
+                current_percentage=to.get("current_percentage") or 0,
+                target_percentage=to.get("target_percentage") or 15,
+                problematic_areas=problematic_areas,
+                removal_suggestions=removal_suggestions,
             )
 
-        if img_imp.get("content_issues"):
-            for ci in img_imp["content_issues"]:
-                content_issues.append(
-                    ImageImprovementContentIssue(
-                        issue=ci.get("issue", ""),
-                        location=ci.get("location", ""),
-                        alternatives=ci.get("alternatives", []),
+        ci_list = img_imp.get("content_issues")
+        if ci_list and isinstance(ci_list, list):
+            for ci in ci_list:
+                if isinstance(ci, dict):
+                    alternatives_raw = ci.get("alternatives")
+                    alternatives = alternatives_raw if isinstance(alternatives_raw, list) else []
+                    content_issues.append(
+                        ImageImprovementContentIssue(
+                            issue=ci.get("issue") or "",
+                            location=ci.get("location") or "",
+                            alternatives=alternatives,
+                        )
                     )
-                )
 
         image_improvement = ImageImprovement(
             text_overlay=text_overlay,
             content_issues=content_issues,
         )
 
-    # 禁止コンテンツのリスト
-    prohibited_content = ai_result.get("prohibited_content", [])
+    # 禁止コンテンツのリスト（nullチェック）
+    prohibited_content_raw = ai_result.get("prohibited_content")
+    prohibited_content = prohibited_content_raw if isinstance(prohibited_content_raw, list) else []
 
     # Moderation APIの結果をマージ（オプション）
     nsfw_detected = ai_result.get("nsfw_detected", False)
