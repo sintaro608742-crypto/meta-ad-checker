@@ -182,12 +182,27 @@ class GeminiService:
         )
 
         # セーフティフィルターでブロックされたかチェック
+        is_blocked = False
+        block_reason = "unknown"
+
+        # ケース1: candidatesが空
         if not response.candidates:
-            # ブロックされた理由を取得
-            block_reason = "unknown"
+            is_blocked = True
             if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
                 block_reason = str(response.prompt_feedback.block_reason) if response.prompt_feedback.block_reason else "safety"
 
+        # ケース2: candidatesが存在するが、finish_reasonがSAFETY
+        elif response.candidates:
+            candidate = response.candidates[0]
+            if hasattr(candidate, 'finish_reason'):
+                # finish_reasonがSAFETYの場合（値は2または"SAFETY"）
+                finish_reason = candidate.finish_reason
+                # finish_reasonがintの場合（2 = SAFETY）またはstrの場合
+                if finish_reason == 2 or str(finish_reason).upper() == "SAFETY" or "SAFETY" in str(finish_reason).upper():
+                    is_blocked = True
+                    block_reason = "safety_finish_reason"
+
+        if is_blocked:
             logger.warning(f"Gemini response blocked by safety filter: {block_reason}")
 
             # ブロックされた場合でも、広告審査として「問題あり」の結果を返す
