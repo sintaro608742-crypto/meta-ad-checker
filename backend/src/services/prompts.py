@@ -108,9 +108,9 @@ def build_meta_ad_review_prompt(
         if page_description:
             ad_text_parts.append(f"【ページ説明】\n{page_description}")
         if page_text:
-            # ページテキストは長いので要約部分のみ
-            truncated_text = page_text[:1500] + "..." if len(page_text) > 1500 else page_text
-            ad_text_parts.append(f"【ページ本文（抜粋）】\n{truncated_text}")
+            # ページテキストは構造化済みなので、より多くを含める
+            truncated_text = page_text[:3000] + "..." if len(page_text) > 3000 else page_text
+            ad_text_parts.append(f"【ページ本文（見出し・重要テキスト抽出）】\n{truncated_text}")
 
     ad_text = "\n\n".join(ad_text_parts) if ad_text_parts else "（テキストなし）"
 

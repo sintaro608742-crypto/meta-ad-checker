@@ -100,6 +100,9 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
             image_data = page_data.og_image_data
 
         logger.info(f"Page data fetched: title={page_title}, has_og_image={image_data is not None}")
+        # デバッグ用: 取得したページテキストの先頭500文字を出力
+        if page_text:
+            logger.debug(f"Page text preview (first 500 chars): {page_text[:500]}")
 
     # --------------------------------------------
     # 3. Gemini APIへのリクエスト送信

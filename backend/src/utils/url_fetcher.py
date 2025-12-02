@@ -188,35 +188,85 @@ def _extract_metadata(soup: BeautifulSoup, base_url: str) -> PageData:
     return page_data
 
 
-def _extract_page_text(soup: BeautifulSoup, max_length: int = 3000) -> str:
+def _extract_page_text(soup: BeautifulSoup, max_length: int = 5000) -> str:
     """
-    HTMLから本文テキストを抽出
+    HTMLから本文テキストを抽出（見出しタグを優先）
 
     Args:
         soup: BeautifulSoupオブジェクト
         max_length: 最大文字数
 
     Returns:
-        str: 抽出したテキスト
+        str: 抽出したテキスト（構造化）
     """
-    # 不要な要素を削除
-    for element in soup(['script', 'style', 'nav', 'header', 'footer', 'aside', 'noscript']):
+    # soup のコピーを作成（元のsoupを変更しないため）
+    from copy import copy
+    soup_copy = copy(soup)
+
+    # 完全に不要な要素のみを削除（script, style, noscript）
+    for element in soup_copy(['script', 'style', 'noscript']):
         element.decompose()
 
-    # メインコンテンツを優先的に取得
-    main_content = soup.find('main') or soup.find('article') or soup.find('body')
+    extracted_parts = []
 
+    # 1. 見出しタグを優先的に抽出（h1 > h2 > h3）
+    for tag in ['h1', 'h2', 'h3']:
+        for element in soup_copy.find_all(tag):
+            text = element.get_text(strip=True)
+            if text and len(text) > 2:  # 2文字以上のみ
+                extracted_parts.append(f"【{tag.upper()}】{text}")
+
+    # 2. headerやhero内のキャッチコピー（重要な広告文言が多い）
+    hero_sections = soup_copy.find_all(['header', 'section'], class_=lambda x: x and any(
+        keyword in str(x).lower() for keyword in ['hero', 'main-visual', 'mv', 'kv', 'top', 'first']
+    ))
+    for section in hero_sections[:3]:  # 最大3セクション
+        for p in section.find_all(['p', 'span', 'div'], recursive=True):
+            text = p.get_text(strip=True)
+            if text and 5 < len(text) < 200:  # 短すぎず長すぎないテキスト
+                if text not in ' '.join(extracted_parts):  # 重複チェック
+                    extracted_parts.append(f"【ヒーロー】{text}")
+
+    # 3. 強調テキスト（strong, b, em）
+    for element in soup_copy.find_all(['strong', 'b', 'em'])[:20]:
+        text = element.get_text(strip=True)
+        if text and 3 < len(text) < 100:
+            if text not in ' '.join(extracted_parts):
+                extracted_parts.append(f"【強調】{text}")
+
+    # 4. メインコンテンツの段落テキスト
+    main_content = soup_copy.find('main') or soup_copy.find('article') or soup_copy.find('body')
     if main_content:
-        # テキストを取得（空白を正規化）
-        text = main_content.get_text(separator=' ', strip=True)
-        # 連続する空白を1つに
-        text = ' '.join(text.split())
-        # 最大文字数で切り詰め
-        if len(text) > max_length:
-            text = text[:max_length] + '...'
-        return text
+        # nav, footer, aside内のテキストは除外
+        for unwanted in main_content.find_all(['nav', 'footer', 'aside']):
+            unwanted.decompose()
 
-    return ""
+        for p in main_content.find_all('p')[:30]:  # 最大30段落
+            text = p.get_text(strip=True)
+            if text and len(text) > 10:
+                if text not in ' '.join(extracted_parts):
+                    extracted_parts.append(text)
+
+    # 5. リスト項目（特徴や利点が書かれていることが多い）
+    for li in soup_copy.find_all('li')[:20]:
+        text = li.get_text(strip=True)
+        if text and 5 < len(text) < 200:
+            if text not in ' '.join(extracted_parts):
+                extracted_parts.append(f"・{text}")
+
+    # 結合
+    full_text = '\n'.join(extracted_parts)
+
+    # 連続する空白を1つに
+    full_text = ' '.join(full_text.split())
+
+    # 最大文字数で切り詰め
+    if len(full_text) > max_length:
+        full_text = full_text[:max_length] + '...'
+
+    logger.info(f"Extracted page text: {len(full_text)} chars, {len(extracted_parts)} parts")
+
+    return full_text
 
 
 # --------------------------------------------
