@@ -21,6 +21,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LinkIcon from '@mui/icons-material/Link';
 
 export const AdCheckerPage = () => {
   const {
@@ -263,6 +264,52 @@ export const AdCheckerPage = () => {
           )}
         </Paper>
 
+        {/* URL審査 */}
+        <Paper
+          elevation={2}
+          sx={{
+            p: 4,
+            borderRadius: 4,
+            mb: 3,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: 4,
+            },
+          }}
+        >
+          <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LinkIcon sx={{ color: '#10b981' }} />
+            URL審査（任意）
+          </Typography>
+
+          <TextField
+            fullWidth
+            label="LP・広告ページのURL"
+            placeholder="例: https://example.com/landing-page"
+            value={formData.pageUrl}
+            onChange={(e) => updateField('pageUrl', e.target.value)}
+            helperText="URLを入力すると、ページのOGP画像とテキストを自動取得して審査します"
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
+                  <LinkIcon fontSize="small" />
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '&:hover fieldset': {
+                  borderColor: '#10b981',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#059669',
+                },
+              },
+            }}
+          />
+        </Paper>
+
         {/* チェック実行ボタン */}
         <Paper elevation={2} sx={{ p: 4, borderRadius: 4, mb: 3 }}>
           <Button
@@ -291,7 +338,7 @@ export const AdCheckerPage = () => {
             color="text.secondary"
             sx={{ textAlign: 'center', mt: 1.5 }}
           >
-            ※テキストまたは画像の少なくとも1つが必要です
+            ※テキスト、画像、またはURLの少なくとも1つが必要です
           </Typography>
 
           {/* エラー表示 */}

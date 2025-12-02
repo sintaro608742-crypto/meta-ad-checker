@@ -22,6 +22,7 @@ export const useAdChecker = () => {
     description: '',
     cta: '',
     imageFile: null,
+    pageUrl: '',
   });
 
   // 画像プレビュー
@@ -104,8 +105,8 @@ export const useAdChecker = () => {
   const checkAdvertisement = useCallback(async () => {
     try {
       // バリデーション
-      if (!formData.headline && !formData.description && !formData.cta && !formData.imageFile) {
-        const errorMessage = 'テキストまたは画像の少なくとも1つを入力してください';
+      if (!formData.headline && !formData.description && !formData.cta && !formData.imageFile && !formData.pageUrl) {
+        const errorMessage = 'テキスト、画像、またはURLの少なくとも1つを入力してください';
         logger.warn('Validation failed', { reason: errorMessage });
         setCheckState((prev) => ({ ...prev, error: errorMessage }));
         return;
@@ -116,6 +117,7 @@ export const useAdChecker = () => {
         hasDescription: !!formData.description,
         hasCta: !!formData.cta,
         hasImage: !!formData.imageFile,
+        hasPageUrl: !!formData.pageUrl,
       });
 
       setCheckState({
@@ -129,6 +131,7 @@ export const useAdChecker = () => {
         headline: formData.headline || undefined,
         description: formData.description || undefined,
         cta: formData.cta || undefined,
+        page_url: formData.pageUrl || undefined,
       };
 
       // 画像がある場合はBase64変換
@@ -197,6 +200,7 @@ export const useAdChecker = () => {
       description: '',
       cta: '',
       imageFile: null,
+      pageUrl: '',
     });
 
     if (imagePreview?.previewUrl) {
@@ -219,7 +223,8 @@ export const useAdChecker = () => {
     formData.headline ||
     formData.description ||
     formData.cta ||
-    formData.imageFile
+    formData.imageFile ||
+    formData.pageUrl
   );
 
   return {

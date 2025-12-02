@@ -127,6 +127,7 @@ export interface AdFormData {
   description: string;
   cta: string;
   imageFile: File | null;
+  pageUrl: string; // LP/広告URL審査用
 }
 
 export interface CheckState {

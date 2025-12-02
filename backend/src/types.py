@@ -76,7 +76,8 @@ class AdCheckRequest(BaseModel):
             self.description and self.description.strip(),
             self.cta and self.cta.strip(),
             self.image,
-            self.image_url
+            self.image_url,
+            self.page_url,
         ])
 
 

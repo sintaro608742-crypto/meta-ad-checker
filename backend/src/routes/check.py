@@ -21,7 +21,8 @@ from ..types import (
     ViolationLocation,
 )
 from ..utils.errors import validate_request_has_content
-from ..utils.image import process_and_validate_image
+from ..utils.image import process_and_validate_image, encode_image_to_base64
+from ..utils.url_fetcher import fetch_page_data
 from ..services import GeminiService, ModerationService, build_meta_ad_review_prompt
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,28 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
         logger.info(f"Image validated: format={image_format}, size={len(image_data)/1024:.2f}KB")
 
     # --------------------------------------------
+    # 2.5. URL審査の場合、ページデータを取得
+    # --------------------------------------------
+    page_title: Optional[str] = None
+    page_description: Optional[str] = None
+    page_text: Optional[str] = None
+
+    if request.page_url:
+        logger.info(f"Fetching page data from URL: {request.page_url}")
+        page_data = await fetch_page_data(request.page_url)
+
+        page_title = page_data.title
+        page_description = page_data.description
+        page_text = page_data.page_text
+
+        # OGP画像がある場合、画像として使用（既存画像がない場合のみ）
+        if page_data.og_image_data and not image_data:
+            logger.info(f"Using OGP image: {len(page_data.og_image_data)/1024:.2f}KB")
+            image_data = page_data.og_image_data
+
+        logger.info(f"Page data fetched: title={page_title}, has_og_image={image_data is not None}")
+
+    # --------------------------------------------
     # 3. Gemini APIへのリクエスト送信
     # --------------------------------------------
     logger.info("Building prompt for Gemini API...")
@@ -81,6 +104,10 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
         description=request.description,
         cta=request.cta,
         has_image=image_data is not None,
+        page_url=request.page_url,
+        page_title=page_title,
+        page_description=page_description,
+        page_text=page_text,
     )
 
     logger.info("Calling Gemini API...")
@@ -101,12 +128,17 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
     # 5. 補助チェック（OpenAI Moderation API - オプション）
     # --------------------------------------------
     moderation_result = None
-    if request.headline or request.description or request.cta:
+    text_to_check = [request.headline, request.description, request.cta]
+    # URL審査の場合、ページテキストも含める
+    if page_text:
+        text_to_check.append(page_text[:2000])  # Moderation用に2000文字に制限
+
+    if any(text_to_check):
         logger.info("Running optional moderation check...")
         moderation_service = ModerationService()
         if moderation_service.is_available():
             # 全テキストを結合
-            all_text = " ".join(filter(None, [request.headline, request.description, request.cta]))
+            all_text = " ".join(filter(None, text_to_check))
             moderation_result = await moderation_service.check_content(all_text)
 
     # --------------------------------------------

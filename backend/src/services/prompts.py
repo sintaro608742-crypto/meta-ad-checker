@@ -70,6 +70,10 @@ def build_meta_ad_review_prompt(
     description: Optional[str] = None,
     cta: Optional[str] = None,
     has_image: bool = False,
+    page_url: Optional[str] = None,
+    page_title: Optional[str] = None,
+    page_description: Optional[str] = None,
+    page_text: Optional[str] = None,
 ) -> str:
     """
     Meta広告審査用のプロンプトを構築
@@ -79,6 +83,10 @@ def build_meta_ad_review_prompt(
         description: 説明文
         cta: CTA（Call To Action）
         has_image: 画像が含まれているか
+        page_url: ランディングページURL
+        page_title: ページタイトル（OGP/title）
+        page_description: ページ説明（OGP/meta description）
+        page_text: ページ本文テキスト
 
     Returns:
         str: 構築されたプロンプト
@@ -92,10 +100,27 @@ def build_meta_ad_review_prompt(
     if cta:
         ad_text_parts.append(f"【CTA】\n{cta}")
 
+    # URL審査の場合、ページ情報を追加
+    if page_url:
+        ad_text_parts.append(f"【ランディングページURL】\n{page_url}")
+        if page_title:
+            ad_text_parts.append(f"【ページタイトル】\n{page_title}")
+        if page_description:
+            ad_text_parts.append(f"【ページ説明】\n{page_description}")
+        if page_text:
+            # ページテキストは長いので要約部分のみ
+            truncated_text = page_text[:1500] + "..." if len(page_text) > 1500 else page_text
+            ad_text_parts.append(f"【ページ本文（抜粋）】\n{truncated_text}")
+
     ad_text = "\n\n".join(ad_text_parts) if ad_text_parts else "（テキストなし）"
 
     # 画像の有無
-    image_note = "※ 画像が添付されています。画像内のテキスト量、不適切なコンテンツを重点的にチェックしてください。" if has_image else "※ 画像はありません。"
+    if page_url and has_image:
+        image_note = "※ OGP画像（ランディングページのシェア画像）が添付されています。画像内のテキスト量、不適切なコンテンツを重点的にチェックしてください。"
+    elif has_image:
+        image_note = "※ 画像が添付されています。画像内のテキスト量、不適切なコンテンツを重点的にチェックしてください。"
+    else:
+        image_note = "※ 画像はありません。"
 
     # プロンプト構築
     prompt = f"""あなたはMeta（Facebook/Instagram）広告の審査エキスパートです。

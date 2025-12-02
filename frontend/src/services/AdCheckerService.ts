@@ -22,6 +22,7 @@ export class AdCheckerService {
       hasDescription: !!request.description,
       hasCta: !!request.cta,
       hasImage: !!request.image,
+      hasPageUrl: !!request.page_url,
     });
 
     try {
