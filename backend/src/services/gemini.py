@@ -181,50 +181,9 @@ class GeminiService:
             )
         )
 
-        # セーフティフィルターでブロックされたかチェック
-        is_blocked = False
-        block_reason = "unknown"
-
-        # デバッグログ
-        logger.info(f"Gemini response candidates: {bool(response.candidates)}")
-        if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
-            logger.info(f"Gemini prompt_feedback: {response.prompt_feedback}")
-
-        # ケース1: candidatesが空
-        if not response.candidates:
-            is_blocked = True
-            if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
-                block_reason = str(response.prompt_feedback.block_reason) if response.prompt_feedback.block_reason else "safety"
-
-        # ケース2: candidatesが存在するが、問題がある場合
-        elif response.candidates:
-            candidate = response.candidates[0]
-            logger.info(f"Gemini candidate: finish_reason={getattr(candidate, 'finish_reason', 'N/A')}")
-
-            # finish_reasonをチェック
-            if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
-                finish_reason = candidate.finish_reason
-                finish_reason_str = str(finish_reason).upper()
-                logger.info(f"finish_reason_str: {finish_reason_str}")
-
-                # SAFETYまたはその他のブロック理由
-                if "SAFETY" in finish_reason_str or "RECITATION" in finish_reason_str or "OTHER" in finish_reason_str:
-                    is_blocked = True
-                    block_reason = f"finish_reason:{finish_reason_str}"
-
-            # contentが空またはpartsが空の場合もブロック
-            if not is_blocked:
-                if not hasattr(candidate, 'content') or not candidate.content:
-                    is_blocked = True
-                    block_reason = "empty_content"
-                elif not hasattr(candidate.content, 'parts') or not candidate.content.parts:
-                    is_blocked = True
-                    block_reason = "empty_parts"
-
-        if is_blocked:
-            logger.warning(f"Gemini response blocked by safety filter: {block_reason}")
-
-            # ブロックされた場合でも、広告審査として「問題あり」の結果を返す
+        # セーフティブロック時のフォールバックレスポンス
+        def _create_safety_blocked_response(reason: str) -> str:
+            logger.warning(f"Gemini response blocked: {reason}")
             return json.dumps({
                 "overall_score": 20,
                 "status": "rejected",
@@ -242,34 +201,62 @@ class GeminiService:
                 }],
                 "text_overlay_percentage": 0.0,
                 "nsfw_detected": False,
-                "prohibited_content": ["safety_filter_blocked"]
+                "prohibited_content": ["safety_filter_blocked", reason]
             })
 
-        # レスポンスのテキストを取得
+        # レスポンスの取得を試みる（全体をtry-exceptで保護）
         try:
+            # デバッグログ
+            logger.info(f"Gemini response type: {type(response)}")
+            logger.info(f"Gemini response candidates exist: {bool(response.candidates)}")
+
+            # prompt_feedbackをチェック
+            if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+                pf = response.prompt_feedback
+                logger.info(f"Gemini prompt_feedback: {pf}")
+                # block_reasonがある場合はブロック
+                if hasattr(pf, 'block_reason') and pf.block_reason:
+                    return _create_safety_blocked_response(f"prompt_blocked:{pf.block_reason}")
+
+            # candidatesが空の場合
+            if not response.candidates:
+                return _create_safety_blocked_response("no_candidates")
+
+            # 最初の候補を取得
+            candidate = response.candidates[0]
+            logger.info(f"Gemini candidate type: {type(candidate)}")
+
+            # finish_reasonをチェック
+            if hasattr(candidate, 'finish_reason') and candidate.finish_reason:
+                finish_reason_str = str(candidate.finish_reason).upper()
+                logger.info(f"Gemini finish_reason: {finish_reason_str}")
+
+                # SAFETYまたはその他のブロック理由
+                if any(reason in finish_reason_str for reason in ["SAFETY", "RECITATION", "OTHER", "BLOCKED"]):
+                    return _create_safety_blocked_response(f"finish_reason:{finish_reason_str}")
+
+            # contentをチェック
+            if not hasattr(candidate, 'content') or not candidate.content:
+                return _create_safety_blocked_response("no_content")
+
+            # partsをチェック
+            if not hasattr(candidate.content, 'parts') or not candidate.content.parts:
+                return _create_safety_blocked_response("no_parts")
+
+            # テキストを取得
             result_text = response.text
+            logger.debug(f"Gemini API response received: {len(result_text)} characters")
+            return result_text
+
         except ValueError as e:
-            # セーフティフィルターでブロックされた場合
-            logger.warning(f"Gemini response text access failed: {str(e)}")
-            return json.dumps({
-                "overall_score": 20,
-                "status": "rejected",
-                "confidence": 0.9,
-                "violations": [{
-                    "category": "prohibited_content",
-                    "severity": "high",
-                    "description": "この広告内容はAIの安全フィルターによってブロックされました。Meta広告ポリシーに違反している可能性が非常に高いです。",
-                    "location": "text"
-                }],
-                "recommendations": [],
-                "text_overlay_percentage": 0.0,
-                "nsfw_detected": False,
-                "prohibited_content": ["safety_filter_blocked"]
-            })
+            # response.textへのアクセスでValueErrorが発生した場合
+            logger.warning(f"Gemini ValueError: {str(e)}")
+            return _create_safety_blocked_response(f"value_error:{str(e)[:50]}")
 
-        logger.debug(f"Gemini API response received: {len(result_text)} characters")
-
-        return result_text
+        except Exception as e:
+            # その他の予期しないエラー
+            logger.error(f"Gemini unexpected error: {type(e).__name__}: {str(e)}")
+            return _create_safety_blocked_response(f"error:{type(e).__name__}")
 
     async def _exponential_backoff(self, attempt: int) -> None:
         """
