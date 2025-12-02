@@ -98,14 +98,14 @@ export class AdCheckerService {
    */
   validateImageFile(file: File): void {
     const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
     if (file.size > MAX_FILE_SIZE) {
       throw new Error('ファイルサイズは20MB以下にしてください');
     }
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      throw new Error('対応形式: JPEG, PNG, WebPのみアップロード可能です');
+      throw new Error('対応形式: JPEG, PNG, WebP, PDFのみアップロード可能です');
     }
 
     logger.debug('Image file validated', {

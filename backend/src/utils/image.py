@@ -24,12 +24,13 @@ logger = logging.getLogger(__name__)
 MAX_FILE_SIZE_MB = 20
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024  # 20MB
 
-SUPPORTED_FORMATS = {"JPEG", "PNG", "WEBP"}
+SUPPORTED_FORMATS = {"JPEG", "PNG", "WEBP", "PDF"}
 SUPPORTED_MIME_TYPES = {
     "image/jpeg": "JPEG",
     "image/jpg": "JPEG",
     "image/png": "PNG",
-    "image/webp": "WEBP"
+    "image/webp": "WEBP",
+    "application/pdf": "PDF"
 }
 
 
@@ -106,28 +107,97 @@ def validate_image_size(image_data: bytes) -> None:
         )
 
 
+def is_pdf_file(data: bytes) -> bool:
+    """
+    バイトデータがPDFファイルかどうかを判定
+
+    Args:
+        data: バイナリデータ
+
+    Returns:
+        bool: PDFファイルの場合True
+    """
+    return data[:4] == b'%PDF'
+
+
+def convert_pdf_to_image(pdf_data: bytes) -> bytes:
+    """
+    PDFの1ページ目を画像（PNG）に変換
+
+    Args:
+        pdf_data: PDFのバイナリデータ
+
+    Returns:
+        bytes: 変換されたPNG画像データ
+
+    Raises:
+        ValidationError: PDF変換に失敗した場合
+    """
+    try:
+        import fitz  # PyMuPDF
+
+        # PDFを開く
+        pdf_document = fitz.open(stream=pdf_data, filetype="pdf")
+
+        if len(pdf_document) == 0:
+            raise ValidationError(
+                message="PDFファイルにページが含まれていません。",
+                details={"error": "PDF has no pages"}
+            )
+
+        # 1ページ目を取得
+        first_page = pdf_document[0]
+
+        # 高解像度で画像に変換（DPI: 150）
+        mat = fitz.Matrix(150 / 72, 150 / 72)  # 72 DPI → 150 DPI
+        pix = first_page.get_pixmap(matrix=mat)
+
+        # PNG形式でバイトに変換
+        png_data = pix.tobytes("png")
+
+        page_count = len(pdf_document)
+        pdf_document.close()
+
+        logger.info(f"PDF converted to image: page_count={page_count}, output_size={len(png_data)/1024:.2f}KB")
+
+        return png_data
+
+    except ValidationError:
+        raise
+    except Exception as e:
+        logger.error(f"PDF to image conversion failed: {str(e)}")
+        raise ValidationError(
+            message="PDFの変換に失敗しました。PDFファイルが破損しているか、正しい形式ではありません。",
+            details={"error": str(e)}
+        )
+
+
 def validate_image_format(image_data: bytes) -> str:
     """
-    画像形式を検証（JPEG/PNG/WebPのみ許可）
+    画像形式を検証（JPEG/PNG/WebP/PDFを許可）
 
     Args:
         image_data: 画像のバイナリデータ
 
     Returns:
-        str: 画像フォーマット名（"JPEG", "PNG", "WEBP"）
+        str: 画像フォーマット名（"JPEG", "PNG", "WEBP", "PDF"）
 
     Raises:
         UnsupportedMediaTypeError: 非対応の画像形式の場合
         ValidationError: 画像ファイルが破損している場合
     """
     try:
+        # PDFの場合
+        if is_pdf_file(image_data):
+            return "PDF"
+
         # PILで画像を開いてフォーマット検証
         image = Image.open(io.BytesIO(image_data))
         image_format = image.format
 
         if image_format not in SUPPORTED_FORMATS:
             raise UnsupportedMediaTypeError(
-                message=f"対応していない画像形式です（{image_format}）。JPEG、PNG、WebPのいずれかを使用してください。",
+                message=f"対応していない画像形式です（{image_format}）。JPEG、PNG、WebP、PDFのいずれかを使用してください。",
                 details={
                     "detected_format": image_format,
                     "supported_formats": list(SUPPORTED_FORMATS)
@@ -172,12 +242,14 @@ def get_image_dimensions(image_data: bytes) -> Tuple[int, int]:
 def process_and_validate_image(base64_string: str) -> Tuple[bytes, str]:
     """
     Base64画像を総合的に処理・検証
+    PDFの場合は1ページ目を画像に変換
 
     Args:
         base64_string: Base64エンコードされた画像文字列
 
     Returns:
         Tuple[bytes, str]: (画像データ, フォーマット名)
+        ※PDFの場合は変換後のPNG画像データとフォーマット"PNG"を返す
 
     Raises:
         ValidationError: デコードまたは画像の破損
@@ -192,6 +264,13 @@ def process_and_validate_image(base64_string: str) -> Tuple[bytes, str]:
 
     # 3. 形式検証
     image_format = validate_image_format(image_data)
+
+    # 4. PDFの場合は画像に変換
+    if image_format == "PDF":
+        logger.info("Converting PDF to image (first page only)...")
+        image_data = convert_pdf_to_image(image_data)
+        image_format = "PNG"  # 変換後はPNG形式
+        logger.info(f"PDF converted successfully: output_size={len(image_data)/1024:.2f}KB")
 
     logger.info(f"Image validated successfully: format={image_format}, size={len(image_data)/1024:.2f}KB")
 

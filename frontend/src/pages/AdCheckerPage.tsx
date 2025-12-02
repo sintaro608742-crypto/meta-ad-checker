@@ -54,6 +54,7 @@ export const AdCheckerPage = () => {
       'image/jpeg': ['.jpg', '.jpeg'],
       'image/png': ['.png'],
       'image/webp': ['.webp'],
+      'application/pdf': ['.pdf'],
     },
     maxSize: 20 * 1024 * 1024, // 20MB
     multiple: false,
@@ -221,7 +222,7 @@ export const AdCheckerPage = () => {
               画像をドラッグ&ドロップ
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              または、クリックしてファイルを選択（最大20MB、JPEG/PNG/WebP）
+              または、クリックしてファイルを選択（最大20MB、JPEG/PNG/WebP/PDF）
             </Typography>
           </Box>
 
