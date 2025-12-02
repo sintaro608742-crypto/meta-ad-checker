@@ -149,38 +149,6 @@ class GeminiService:
         Returns:
             str: AIの生成結果（JSON文字列）
         """
-        # 生成設定
-        generation_config = GenerationConfig(
-            temperature=temperature,
-            top_p=0.95,
-            top_k=40,
-            max_output_tokens=8192,
-        )
-
-        # コンテンツの準備
-        contents = []
-
-        # 画像がある場合は追加
-        if image_data:
-            # PILで画像を開く
-            from PIL import Image
-            import io
-            image = Image.open(io.BytesIO(image_data))
-            contents.append(image)
-
-        # プロンプトを追加
-        contents.append(prompt)
-
-        # 同期APIを非同期実行
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: self.model.generate_content(
-                contents,
-                generation_config=generation_config,
-            )
-        )
-
         # セーフティブロック時のフォールバックレスポンス
         def _create_safety_blocked_response(reason: str) -> str:
             logger.warning(f"Gemini response blocked: {reason}")
@@ -203,6 +171,46 @@ class GeminiService:
                 "nsfw_detected": False,
                 "prohibited_content": ["safety_filter_blocked", reason]
             })
+
+        try:
+            # 生成設定
+            generation_config = GenerationConfig(
+                temperature=temperature,
+                top_p=0.95,
+                top_k=40,
+                max_output_tokens=8192,
+            )
+
+            # コンテンツの準備
+            contents = []
+
+            # 画像がある場合は追加
+            if image_data:
+                # PILで画像を開く
+                from PIL import Image
+                import io
+                image = Image.open(io.BytesIO(image_data))
+                contents.append(image)
+
+            # プロンプトを追加
+            contents.append(prompt)
+
+            # 同期APIを非同期実行
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self.model.generate_content(
+                    contents,
+                    generation_config=generation_config,
+                )
+            )
+        except ValueError as e:
+            logger.error(f"Gemini generate_content ValueError: {str(e)}")
+            return _create_safety_blocked_response(f"generate_error:{str(e)[:50]}")
+        except Exception as e:
+            logger.error(f"Gemini generate_content error: {type(e).__name__}: {str(e)}")
+            # 例外を再スローして上位でリトライロジックを働かせる
+            raise
 
         # レスポンスの取得を試みる（全体をtry-exceptで保護）
         try:
