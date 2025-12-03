@@ -1,6 +1,6 @@
 // ============================================
 // AdCheckerService - 広告審査API統合サービス
-// モックから実API統合に切り替え完了
+// URL審査専用（シンプル版）
 // ============================================
 
 import type {
@@ -13,16 +13,12 @@ import { logger } from '@/lib/logger';
 
 export class AdCheckerService {
   /**
-   * 広告チェックを実行（実API統合）
+   * URL審査を実行（実API統合）
    * エンドポイント: POST /api/check
    */
   async checkAdvertisement(request: AdCheckRequest): Promise<AdCheckResponse> {
-    logger.debug('AdChecker: Starting ad check', {
-      hasHeadline: !!request.headline,
-      hasDescription: !!request.description,
-      hasCta: !!request.cta,
-      hasImage: !!request.image,
-      hasPageUrl: !!request.page_url,
+    logger.debug('AdChecker: Starting URL check', {
+      pageUrl: request.page_url,
     });
 
     try {
@@ -69,50 +65,5 @@ export class AdCheckerService {
       });
       throw error;
     }
-  }
-
-  /**
-   * ファイルをBase64文字列に変換
-   * @param file - 変換するファイル
-   * @returns Base64エンコードされた文字列
-   */
-  async fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        // "data:image/jpeg;base64," のプレフィックスを除去
-        const base64 = result.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = () => {
-        reject(new Error('ファイル読み込みに失敗しました'));
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  /**
-   * 画像ファイルのバリデーション
-   * @param file - バリデーションするファイル
-   * @throws バリデーションエラー
-   */
-  validateImageFile(file: File): void {
-    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-
-    if (file.size > MAX_FILE_SIZE) {
-      throw new Error('ファイルサイズは20MB以下にしてください');
-    }
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      throw new Error('対応形式: JPEG, PNG, WebP, PDFのみアップロード可能です');
-    }
-
-    logger.debug('Image file validated', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    });
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Paper,
@@ -9,18 +9,14 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  IconButton,
 } from '@mui/material';
 import { apiClient } from '../services/ApiClient';
-import { useDropzone } from 'react-dropzone';
 import { PublicLayout } from '../layouts/PublicLayout';
 import { useAdChecker } from '../hooks/useAdChecker';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
 import { EnhancedRecommendations } from '../components/EnhancedRecommendations';
 
@@ -40,40 +36,13 @@ export const AdCheckerPage = () => {
 
   const {
     formData,
-    imagePreview,
     checkState,
     result,
     hasInput,
     updateField,
-    handleImageUpload,
-    clearImage,
     checkAdvertisement,
     resetForm,
   } = useAdChecker();
-
-  // Dropzone設定
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      if (acceptedFiles.length > 0) {
-        handleImageUpload(acceptedFiles[0]).catch(() => {
-          // エラーはuseAdChecker内でハンドリング済み
-        });
-      }
-    },
-    [handleImageUpload]
-  );
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/jpeg': ['.jpg', '.jpeg'],
-      'image/png': ['.png'],
-      'image/webp': ['.webp'],
-      'application/pdf': ['.pdf'],
-    },
-    maxSize: 20 * 1024 * 1024, // 20MB
-    multiple: false,
-  });
 
   // ステータスバッジの表示
   const getStatusBadge = () => {
@@ -143,141 +112,6 @@ export const AdCheckerPage = () => {
           メタ広告審査チェッカー
         </Typography>
 
-        {/* 広告テキスト入力 */}
-        <Paper
-          elevation={2}
-          sx={{
-            p: 4,
-            borderRadius: 4,
-            mb: 3,
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: 4,
-            },
-          }}
-        >
-          <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
-            広告テキスト
-          </Typography>
-
-          <Stack spacing={3}>
-            <TextField
-              fullWidth
-              label="見出し（任意）"
-              placeholder="例: 今すぐダウンロード"
-              value={formData.headline}
-              onChange={(e) => updateField('headline', e.target.value)}
-              inputProps={{ maxLength: 255 }}
-            />
-
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="説明文（任意）"
-              placeholder="例: 業界最安値で高品質なサービスを提供します"
-              value={formData.description}
-              onChange={(e) => updateField('description', e.target.value)}
-              inputProps={{ maxLength: 2000 }}
-            />
-
-            <TextField
-              fullWidth
-              label="CTA（任意）"
-              placeholder="例: 詳細を見る"
-              value={formData.cta}
-              onChange={(e) => updateField('cta', e.target.value)}
-              inputProps={{ maxLength: 30 }}
-            />
-          </Stack>
-        </Paper>
-
-        {/* 画像アップロード */}
-        <Paper
-          elevation={2}
-          sx={{
-            p: 4,
-            borderRadius: 4,
-            mb: 3,
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: 4,
-            },
-          }}
-        >
-          <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
-            広告画像（任意）
-          </Typography>
-
-          <Box
-            {...getRootProps()}
-            sx={{
-              border: '3px dashed',
-              borderColor: isDragActive ? 'primary.main' : '#10b981',
-              borderRadius: 4,
-              p: 6,
-              textAlign: 'center',
-              background: isDragActive
-                ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
-                : 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-                borderColor: '#059669',
-                transform: 'scale(1.02)',
-              },
-            }}
-          >
-            <input {...getInputProps()} />
-            <CloudUploadIcon sx={{ fontSize: 64, color: '#10b981', mb: 2 }} />
-            <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
-              画像をドラッグ&ドロップ
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              または、クリックしてファイルを選択（最大20MB、JPEG/PNG/WebP/PDF）
-            </Typography>
-          </Box>
-
-          {/* 画像プレビュー */}
-          {imagePreview && (
-            <Box
-              sx={{
-                mt: 3,
-                maxWidth: 400,
-                mx: 'auto',
-                borderRadius: 3,
-                overflow: 'hidden',
-                boxShadow: 3,
-                position: 'relative',
-              }}
-            >
-              <img
-                src={imagePreview.previewUrl}
-                alt="プレビュー"
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  clearImage();
-                }}
-                sx={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  bgcolor: 'rgba(255, 255, 255, 0.9)',
-                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 1)' },
-                }}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Box>
-          )}
-        </Paper>
-
         {/* URL審査 */}
         <Paper
           elevation={2}
@@ -294,16 +128,16 @@ export const AdCheckerPage = () => {
         >
           <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
             <LinkIcon sx={{ color: '#10b981' }} />
-            URL審査（任意）
+            LP・広告ページのURL
           </Typography>
 
           <TextField
             fullWidth
-            label="LP・広告ページのURL"
+            label="審査したいページのURL"
             placeholder="例: https://example.com/landing-page"
             value={formData.pageUrl}
             onChange={(e) => updateField('pageUrl', e.target.value)}
-            helperText="URLを入力すると、ページのOGP画像とテキストを自動取得して審査します"
+            helperText="URLを入力すると、ページの画像とテキストを自動取得してMeta広告審査を予測します"
             InputProps={{
               startAdornment: (
                 <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
@@ -367,7 +201,7 @@ export const AdCheckerPage = () => {
             color="text.secondary"
             sx={{ textAlign: 'center', mt: 1.5 }}
           >
-            ※テキスト、画像、またはURLの少なくとも1つが必要です
+            ※審査したいLP・広告ページのURLを入力してください
           </Typography>
 
           {/* エラー表示 */}

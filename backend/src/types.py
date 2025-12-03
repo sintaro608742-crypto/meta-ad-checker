@@ -53,32 +53,23 @@ class ViolationLocation(str, Enum):
 # --------------------------------------------
 
 class AdCheckRequest(BaseModel):
-    """広告審査リクエスト"""
-    headline: Optional[str] = Field(None, max_length=255, description="見出し（最大255文字）")
-    description: Optional[str] = Field(None, max_length=2000, description="説明文（最大2000文字）")
-    cta: Optional[str] = Field(None, max_length=30, description="CTA（最大30文字）")
-    image: Optional[str] = Field(None, description="画像（Base64エンコード文字列）")
-    image_url: Optional[str] = Field(None, description="画像URL（オプション）")
-    page_url: Optional[str] = Field(None, description="ランディングページURL（オプション）")
+    """広告審査リクエスト（URL審査専用）"""
+    page_url: str = Field(..., description="LP・広告ページURL（必須）")
 
-    @field_validator('headline', 'description', 'cta')
+    @field_validator('page_url')
     @classmethod
-    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
-        """テキストフィールドのバリデーション"""
-        if v is not None and v.strip() == "":
-            return None
+    def validate_page_url(cls, v: str) -> str:
+        """URLのバリデーション"""
+        if not v or not v.strip():
+            raise ValueError("URLを入力してください")
+        v = v.strip()
+        if not v.startswith(('http://', 'https://')):
+            raise ValueError("URLはhttp://またはhttps://で始まる必要があります")
         return v
 
     def has_content(self) -> bool:
         """コンテンツが存在するかチェック"""
-        return any([
-            self.headline and self.headline.strip(),
-            self.description and self.description.strip(),
-            self.cta and self.cta.strip(),
-            self.image,
-            self.image_url,
-            self.page_url,
-        ])
+        return bool(self.page_url and self.page_url.strip())
 
 
 # --------------------------------------------

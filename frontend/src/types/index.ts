@@ -8,12 +8,7 @@
 // --------------------------------------------
 
 export interface AdCheckRequest {
-  headline?: string;
-  description?: string;
-  cta?: string;
-  image?: File | string; // File (フロント) or base64 string (バックエンド)
-  image_url?: string; // 画像URL
-  page_url?: string; // LP URL（OGP自動抽出用）
+  page_url: string; // LP・広告ページURL（必須）
 }
 
 // --------------------------------------------
@@ -169,20 +164,11 @@ export interface GuideContent {
 // --------------------------------------------
 
 export interface AdFormData {
-  headline: string;
-  description: string;
-  cta: string;
-  imageFile: File | null;
-  pageUrl: string; // LP/広告URL審査用
+  pageUrl: string; // LP・広告ページURL
 }
 
 export interface CheckState {
   isLoading: boolean;
   hasResult: boolean;
   error: string | null;
-}
-
-export interface ImagePreview {
-  file: File;
-  previewUrl: string;
 }

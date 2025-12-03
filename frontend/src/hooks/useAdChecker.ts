@@ -1,5 +1,6 @@
 // ============================================
 // useAdChecker - 広告チェック用カスタムフック
+// URL審査専用（シンプル版）
 // ============================================
 
 import { useState, useCallback } from 'react';
@@ -8,7 +9,6 @@ import type {
   AdCheckResponse,
   AdFormData,
   CheckState,
-  ImagePreview,
 } from '@/types';
 import { AdCheckerService } from '@/services/AdCheckerService';
 import { logger } from '@/lib/logger';
@@ -16,17 +16,10 @@ import { logger } from '@/lib/logger';
 const service = new AdCheckerService();
 
 export const useAdChecker = () => {
-  // フォームデータ
+  // フォームデータ（URLのみ）
   const [formData, setFormData] = useState<AdFormData>({
-    headline: '',
-    description: '',
-    cta: '',
-    imageFile: null,
     pageUrl: '',
   });
-
-  // 画像プレビュー
-  const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
 
   // チェック状態
   const [checkState, setCheckState] = useState<CheckState>({
@@ -42,7 +35,7 @@ export const useAdChecker = () => {
    * フォームフィールド更新
    */
   const updateField = useCallback(
-    (field: keyof AdFormData, value: string | File | null) => {
+    (field: keyof AdFormData, value: string) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       logger.debug('Form field updated', { field, hasValue: !!value });
     },
@@ -50,74 +43,20 @@ export const useAdChecker = () => {
   );
 
   /**
-   * 画像ファイルをアップロード
-   */
-  const handleImageUpload = useCallback(async (file: File) => {
-    try {
-      logger.debug('Image upload started', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      });
-
-      // バリデーション
-      service.validateImageFile(file);
-
-      // プレビューURL生成
-      const previewUrl = URL.createObjectURL(file);
-
-      setImagePreview({ file, previewUrl });
-      setFormData((prev) => ({ ...prev, imageFile: file }));
-
-      logger.info('Image uploaded successfully', { name: file.name });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      logger.error('Image upload failed', {
-        error: error.message,
-        fileName: file.name,
-      });
-
-      setCheckState((prev) => ({
-        ...prev,
-        error: error.message,
-      }));
-
-      // エラーを上位に伝播
-      throw error;
-    }
-  }, []);
-
-  /**
-   * 画像をクリア
-   */
-  const clearImage = useCallback(() => {
-    if (imagePreview?.previewUrl) {
-      URL.revokeObjectURL(imagePreview.previewUrl);
-    }
-    setImagePreview(null);
-    setFormData((prev) => ({ ...prev, imageFile: null }));
-    logger.debug('Image cleared');
-  }, [imagePreview]);
-
-  /**
    * 広告チェック実行
    */
   const checkAdvertisement = useCallback(async () => {
     try {
       // バリデーション
-      if (!formData.headline && !formData.description && !formData.cta && !formData.imageFile && !formData.pageUrl) {
-        const errorMessage = 'テキスト、画像、またはURLの少なくとも1つを入力してください';
+      if (!formData.pageUrl) {
+        const errorMessage = 'URLを入力してください';
         logger.warn('Validation failed', { reason: errorMessage });
         setCheckState((prev) => ({ ...prev, error: errorMessage }));
         return;
       }
 
       logger.debug('Starting advertisement check', {
-        hasHeadline: !!formData.headline,
-        hasDescription: !!formData.description,
-        hasCta: !!formData.cta,
-        hasImage: !!formData.imageFile,
-        hasPageUrl: !!formData.pageUrl,
+        pageUrl: formData.pageUrl,
       });
 
       setCheckState({
@@ -128,20 +67,8 @@ export const useAdChecker = () => {
 
       // リクエスト作成
       const request: AdCheckRequest = {
-        headline: formData.headline || undefined,
-        description: formData.description || undefined,
-        cta: formData.cta || undefined,
-        page_url: formData.pageUrl || undefined,
+        page_url: formData.pageUrl,
       };
-
-      // 画像がある場合はBase64変換
-      if (formData.imageFile) {
-        const base64 = await service.fileToBase64(formData.imageFile);
-        request.image = base64;
-        logger.debug('Image converted to base64', {
-          originalSize: formData.imageFile.size,
-        });
-      }
 
       // API呼び出し
       const response = await service.checkAdvertisement(request);
@@ -185,8 +112,6 @@ export const useAdChecker = () => {
       error: null,
     });
     setResult(null);
-
-    // 画像プレビューはクリアしない（再チェック時に同じ画像を使用可能にするため）
   }, []);
 
   /**
@@ -196,17 +121,8 @@ export const useAdChecker = () => {
     logger.debug('Clearing all data');
 
     setFormData({
-      headline: '',
-      description: '',
-      cta: '',
-      imageFile: null,
       pageUrl: '',
     });
-
-    if (imagePreview?.previewUrl) {
-      URL.revokeObjectURL(imagePreview.previewUrl);
-    }
-    setImagePreview(null);
 
     setCheckState({
       isLoading: false,
@@ -214,31 +130,22 @@ export const useAdChecker = () => {
       error: null,
     });
     setResult(null);
-  }, [imagePreview]);
+  }, []);
 
   /**
    * 入力があるかチェック
    */
-  const hasInput = !!(
-    formData.headline ||
-    formData.description ||
-    formData.cta ||
-    formData.imageFile ||
-    formData.pageUrl
-  );
+  const hasInput = !!formData.pageUrl;
 
   return {
     // データ
     formData,
-    imagePreview,
     checkState,
     result,
     hasInput,
 
     // アクション
     updateField,
-    handleImageUpload,
-    clearImage,
     checkAdvertisement,
     resetForm,
     clearAll,

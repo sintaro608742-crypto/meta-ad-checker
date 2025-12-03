@@ -3,31 +3,29 @@
 メタ広告審査チェッカー - 広告審査エンドポイント
 ============================================
 
-POST /api/check - 広告テキスト+画像の総合審査
+POST /api/check - URL審査（LP・広告ページのURL審査専用）
 """
 
 import logging
 from typing import Optional
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from ..types import (
     AdCheckRequest,
     AdCheckResponse,
     AdStatus,
     Violation,
-    Recommendation,
     ViolationCategory,
     ViolationSeverity,
     ViolationLocation,
     RecommendationPriority,
     RecommendationActionType,
     RecommendationTarget,
+    Recommendation,
     ImageImprovement,
     ImageImprovementTextOverlay,
     ImageImprovementContentIssue,
 )
-from ..utils.errors import validate_request_has_content
-from ..utils.image import process_and_validate_image, encode_image_to_base64
 from ..utils.url_fetcher import fetch_page_data
 from ..services import GeminiService, ModerationService, build_meta_ad_review_prompt
 
@@ -37,135 +35,98 @@ router = APIRouter(prefix="/api", tags=["ad-check"])
 
 
 # --------------------------------------------
-# POST /api/check - 広告審査AI判定
+# POST /api/check - URL審査AI判定
 # --------------------------------------------
 
 @router.post("/check", response_model=AdCheckResponse)
 async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
     """
-    広告テキスト+画像を総合的にチェックし、Meta広告審査の合否予測と改善提案を返却
+    LP・広告ページのURLを審査し、Meta広告審査の合否予測と改善提案を返却
 
     ## 処理フロー:
-    1. リクエストバリデーション
-    2. 画像の前処理（Base64エンコード検証）
-    3. Gemini APIへのリクエスト送信
-    4. AI応答の解析
-    5. スコア計算とステータス判定
-    6. レスポンス整形
+    1. URLからページデータを取得
+    2. Gemini APIへのリクエスト送信
+    3. AI応答の解析
+    4. スコア計算とステータス判定
+    5. レスポンス整形
 
     ## エラー:
     - 400: バリデーションエラー
-    - 413: 画像サイズ超過
-    - 415: 非対応形式
     - 429: レート制限超過
     - 500: サーバーエラー
     - 503: タイムアウト
     """
-    logger.info("Starting ad check")
+    logger.info(f"Starting URL ad check: {request.page_url}")
 
     # --------------------------------------------
-    # 1. リクエストバリデーション
-    # --------------------------------------------
-    validate_request_has_content(request)
-
-    # --------------------------------------------
-    # 2. 画像の前処理（画像がある場合）
-    # --------------------------------------------
-    image_data: Optional[bytes] = None
-    image_format: Optional[str] = None
-
-    if request.image:
-        logger.info("Processing image...")
-        image_data, image_format = process_and_validate_image(request.image)
-        logger.info(f"Image validated: format={image_format}, size={len(image_data)/1024:.2f}KB")
-
-    # --------------------------------------------
-    # 2.5. URL審査の場合、ページデータを取得
+    # 1. URLからページデータを取得
     # --------------------------------------------
     page_title: Optional[str] = None
     page_description: Optional[str] = None
     page_text: Optional[str] = None
-    page_images: list = []  # LP内の複数画像
+    page_images: list = []
 
-    if request.page_url:
-        logger.info(f"Fetching page data from URL: {request.page_url}")
-        page_data = await fetch_page_data(request.page_url)
+    logger.info(f"Fetching page data from URL: {request.page_url}")
+    page_data = await fetch_page_data(request.page_url)
 
-        page_title = page_data.title
-        page_description = page_data.description
-        page_text = page_data.page_text
+    page_title = page_data.title
+    page_description = page_data.description
+    page_text = page_data.page_text
 
-        # LP内の画像を取得（OGP画像 + 主要画像）
-        if page_data.images:
-            page_images = [img.data for img in page_data.images]
-            logger.info(f"Found {len(page_images)} images from LP")
+    # LP内の画像を取得（OGP画像 + 主要画像）
+    if page_data.images:
+        page_images = [img.data for img in page_data.images]
+        logger.info(f"Found {len(page_images)} images from LP")
 
-        # OGP画像がある場合、image_dataにも設定（後方互換性）
-        if page_data.og_image_data and not image_data:
-            logger.info(f"Using OGP image: {len(page_data.og_image_data)/1024:.2f}KB")
-            image_data = page_data.og_image_data
-
-        logger.info(f"Page data fetched: title={page_title}, images={len(page_images)}")
-        # デバッグ用: 取得したページテキストの先頭500文字を出力
-        if page_text:
-            logger.debug(f"Page text preview (first 500 chars): {page_text[:500]}")
+    logger.info(f"Page data fetched: title={page_title}, images={len(page_images)}")
+    if page_text:
+        logger.debug(f"Page text preview (first 500 chars): {page_text[:500]}")
 
     # --------------------------------------------
-    # 3. Gemini APIへのリクエスト送信
+    # 2. Gemini APIへのリクエスト送信
     # --------------------------------------------
-    # 画像の統合（アップロード画像 + LP内画像）
-    all_images = page_images.copy() if page_images else []
-    if image_data and image_data not in all_images:
-        all_images.insert(0, image_data)  # アップロード画像を先頭に
-
-    has_images = len(all_images) > 0
+    has_images = len(page_images) > 0
 
     logger.info("Building prompt for Gemini API...")
     prompt = build_meta_ad_review_prompt(
-        headline=request.headline,
-        description=request.description,
-        cta=request.cta,
+        headline=None,
+        description=None,
+        cta=None,
         has_image=has_images,
         page_url=request.page_url,
         page_title=page_title,
         page_description=page_description,
         page_text=page_text,
-        image_count=len(all_images),  # 画像枚数を渡す
+        image_count=len(page_images),
     )
 
-    logger.info(f"Calling Gemini API with {len(all_images)} images...")
+    logger.info(f"Calling Gemini API with {len(page_images)} images...")
     gemini_service = GeminiService()
     ai_response_text = await gemini_service.generate_content_with_retry(
         prompt=prompt,
-        images=all_images if all_images else None,
+        images=page_images if page_images else None,
         temperature=0.3,
     )
 
     # --------------------------------------------
-    # 4. AI応答の解析
+    # 3. AI応答の解析
     # --------------------------------------------
     logger.info("Parsing AI response...")
     ai_response = gemini_service.parse_json_response(ai_response_text)
 
     # --------------------------------------------
-    # 5. 補助チェック（OpenAI Moderation API - オプション）
+    # 4. 補助チェック（OpenAI Moderation API - オプション）
     # --------------------------------------------
     moderation_result = None
-    text_to_check = [request.headline, request.description, request.cta]
-    # URL審査の場合、ページテキストも含める
     if page_text:
-        text_to_check.append(page_text[:2000])  # Moderation用に2000文字に制限
-
-    if any(text_to_check):
         logger.info("Running optional moderation check...")
         moderation_service = ModerationService()
         if moderation_service.is_available():
-            # 全テキストを結合
-            all_text = " ".join(filter(None, text_to_check))
-            moderation_result = await moderation_service.check_content(all_text)
+            # ページテキストをModeration APIでチェック（2000文字に制限）
+            moderation_result = await moderation_service.check_content(page_text[:2000])
 
     # --------------------------------------------
-    # 6. スコア計算とステータス判定
+    # 5. スコア計算とステータス判定
     # --------------------------------------------
     logger.info("Calculating score and status...")
     response = _build_response_from_ai_result(ai_response, moderation_result)
