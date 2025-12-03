@@ -8,6 +8,8 @@ URLからOGP情報、ページテキスト、画像を取得
 
 import logging
 import httpx
+import re
+import json
 from typing import Optional, Tuple, List
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
@@ -140,7 +142,9 @@ async def fetch_page_data(url: str, timeout: float = 15.0) -> PageData:
                     ))
 
             # LP内の主要画像を取得（最大2枚追加）
-            main_image_urls = _extract_main_images(soup, url, max_images=2)
+            # htmlを渡してVue.js等のJSON埋め込み画像も抽出
+            # サイズ制限で失敗する画像があるため、多めに候補を取得
+            main_image_urls = _extract_main_images(soup, url, max_images=10, html=html)
             for img_url in main_image_urls:
                 # OGP画像と重複しない場合のみ取得
                 if img_url != page_data.og_image_url:
@@ -221,7 +225,69 @@ def _extract_metadata(soup: BeautifulSoup, base_url: str) -> PageData:
     return page_data
 
 
-def _extract_main_images(soup: BeautifulSoup, base_url: str, max_images: int = 2) -> List[str]:
+def _extract_images_from_json_data(html: str, base_url: str) -> List[str]:
+    """
+    Vue.js/React等のJSON埋め込みデータから画像URLを抽出
+
+    Args:
+        html: 生のHTML文字列
+        base_url: ベースURL（相対パス解決用）
+
+    Returns:
+        List[str]: 画像URLのリスト
+    """
+    image_urls = []
+
+    # v-bind:data='...' や data='...' 内のJSONを探す
+    # UTAGE等のSPA/Vue.jsサイトで使用されるパターン
+    json_patterns = [
+        r'v-bind:data=\'([^\']+)\'',
+        r':data=\'([^\']+)\'',
+        r'data-elements=\'([^\']+)\'',
+    ]
+
+    for pattern in json_patterns:
+        matches = re.findall(pattern, html, re.DOTALL)
+        for match in matches:
+            try:
+                # HTMLエンティティをデコード
+                decoded = match.replace('&quot;', '"').replace('&#039;', "'")
+                data = json.loads(decoded)
+
+                # 再帰的に画像URLを探す
+                def find_images(obj, urls):
+                    if isinstance(obj, dict):
+                        # "type": "image" と "img_src" のパターン
+                        if obj.get('type') == 'image' and obj.get('img_src'):
+                            img_url = obj['img_src'].replace('\\/', '/')
+                            if _is_valid_image_url(img_url):
+                                full_url = urljoin(base_url, img_url)
+                                if full_url not in urls:
+                                    urls.append(full_url)
+                        # "image-text" タイプも対応（プロフィール画像等）
+                        elif obj.get('type') == 'image-text' and obj.get('img_src'):
+                            img_url = obj['img_src'].replace('\\/', '/')
+                            if _is_valid_image_url(img_url):
+                                full_url = urljoin(base_url, img_url)
+                                if full_url not in urls:
+                                    urls.append(full_url)
+                        # 子要素を再帰的に探索
+                        for key, value in obj.items():
+                            find_images(value, urls)
+                    elif isinstance(obj, list):
+                        for item in obj:
+                            find_images(item, urls)
+
+                find_images(data, image_urls)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.debug(f"Failed to parse JSON data: {e}")
+                continue
+
+    logger.info(f"Extracted {len(image_urls)} images from JSON data")
+    return image_urls
+
+
+def _extract_main_images(soup: BeautifulSoup, base_url: str, max_images: int = 2, html: str = None) -> List[str]:
     """
     LP内の主要画像URLを抽出
 
@@ -229,11 +295,22 @@ def _extract_main_images(soup: BeautifulSoup, base_url: str, max_images: int = 2
         soup: BeautifulSoupオブジェクト
         base_url: ベースURL（相対パス解決用）
         max_images: 取得する最大画像数
+        html: 生のHTML文字列（JSON埋め込み画像抽出用）
 
     Returns:
         List[str]: 画像URLのリスト
     """
     image_urls = []
+
+    # 0. Vue.js/React等のJSON埋め込み画像を優先的に抽出
+    if html:
+        json_images = _extract_images_from_json_data(html, base_url)
+        for img_url in json_images[:max_images]:
+            if img_url not in image_urls:
+                image_urls.append(img_url)
+                if len(image_urls) >= max_images:
+                    logger.info(f"Found {len(image_urls)} images from JSON data")
+                    return image_urls
 
     # 1. hero/mainセクション内の画像を優先
     hero_selectors = [
