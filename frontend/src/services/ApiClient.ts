@@ -72,7 +72,7 @@ class ApiClient {
             url: error.config?.url,
           });
           throw new Error(
-            'サーバーに接続できません。バックエンドが起動していることを確認してください。'
+            'サーバーが起動中です。ページ上部のローディングが完了するまでお待ちください。'
           );
         } else {
           // その他のエラー
@@ -130,6 +130,41 @@ class ApiClient {
   async post<T, D = unknown>(url: string, data?: D): Promise<T> {
     const response = await this.client.post<T>(url, data);
     return response.data;
+  }
+
+  /**
+   * ヘルスチェック（バックエンド起動確認）
+   * Renderの無料プランはスリープするため、起動に時間がかかる
+   */
+  async healthCheck(): Promise<boolean> {
+    try {
+      // スリープからの起動に最大90秒かかる可能性があるため、タイムアウトを長めに設定
+      const response = await this.client.get('/api/health', {
+        timeout: 90000, // 90秒
+      });
+      return response.status === 200;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * バックエンドの起動を待機（リトライ付き）
+   */
+  async waitForBackend(maxRetries: number = 3, retryDelay: number = 2000): Promise<boolean> {
+    for (let i = 0; i < maxRetries; i++) {
+      logger.info(`Backend health check attempt ${i + 1}/${maxRetries}`);
+      const isHealthy = await this.healthCheck();
+      if (isHealthy) {
+        logger.info('Backend is ready');
+        return true;
+      }
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+    logger.warn('Backend health check failed after retries');
+    return false;
   }
 }
 

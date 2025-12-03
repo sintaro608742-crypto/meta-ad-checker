@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Paper,
@@ -10,7 +10,9 @@ import {
   CircularProgress,
   Chip,
   IconButton,
+  LinearProgress,
 } from '@mui/material';
+import { apiClient } from '../services/ApiClient';
 import { useDropzone } from 'react-dropzone';
 import { PublicLayout } from '../layouts/PublicLayout';
 import { useAdChecker } from '../hooks/useAdChecker';
@@ -24,6 +26,19 @@ import LinkIcon from '@mui/icons-material/Link';
 import { EnhancedRecommendations } from '../components/EnhancedRecommendations';
 
 export const AdCheckerPage = () => {
+  // バックエンドの起動状態管理
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'ready' | 'error'>('checking');
+
+  // ページロード時にバックエンドを起動
+  useEffect(() => {
+    const wakeUpBackend = async () => {
+      setBackendStatus('checking');
+      const isReady = await apiClient.waitForBackend(1, 0); // 1回のヘルスチェック（90秒タイムアウト）
+      setBackendStatus(isReady ? 'ready' : 'error');
+    };
+    wakeUpBackend();
+  }, []);
+
   const {
     formData,
     imagePreview,
@@ -103,10 +118,43 @@ export const AdCheckerPage = () => {
 
   return (
     <PublicLayout maxWidth="lg" showBackground={false}>
+      {/* バックエンド起動中の表示 */}
+      {backendStatus === 'checking' && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            bgcolor: '#059669',
+            color: 'white',
+            py: 1.5,
+            px: 2,
+            textAlign: 'center',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <CircularProgress size={20} sx={{ color: 'white' }} />
+            <Typography sx={{ fontWeight: 600 }}>
+              サーバーを準備中です...（初回は最大1分ほどかかる場合があります）
+            </Typography>
+          </Box>
+          <LinearProgress
+            sx={{
+              mt: 1,
+              bgcolor: 'rgba(255,255,255,0.3)',
+              '& .MuiLinearProgress-bar': { bgcolor: 'white' },
+            }}
+          />
+        </Box>
+      )}
+
       <Box
         sx={{
           py: 6,
           px: 3,
+          pt: backendStatus === 'checking' ? 12 : 6, // 起動中はパディング追加
           background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 50%, #e0f2fe 100%)',
           minHeight: 'calc(100vh - 64px)',
         }}
