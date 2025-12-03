@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
 
 from .errors import ValidationError
+from .image import optimize_image_for_ai
 
 logger = logging.getLogger(__name__)
 
@@ -499,8 +500,16 @@ async def _fetch_image(client: httpx.AsyncClient, image_url: str, max_size: int 
             logger.warning(f"Not an image: {content_type}")
             return None
 
-        logger.info(f"Image fetched: {len(response.content)} bytes")
-        return response.content
+        image_data = response.content
+        original_size = len(image_data)
+
+        # AI処理用に画像を最適化（リサイズ・圧縮）
+        # Gemini APIのタイムアウトを防ぐため、大きな画像は縮小
+        optimized_data = optimize_image_for_ai(image_data, max_dimension=1024)
+        optimized_size = len(optimized_data)
+
+        logger.info(f"Image fetched: {original_size/1024:.0f}KB -> {optimized_size/1024:.0f}KB (optimized)")
+        return optimized_data
 
     except Exception as e:
         logger.warning(f"Failed to fetch image: {str(e)}")

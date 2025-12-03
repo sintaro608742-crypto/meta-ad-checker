@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # --------------------------------------------
 
 GEMINI_MODEL = "gemini-2.0-flash"
-GEMINI_TIMEOUT = 30  # 30秒
+GEMINI_TIMEOUT = 60  # 60秒（複数画像対応のため延長）
 MAX_RETRIES = 3  # 最大リトライ回数
 INITIAL_RETRY_DELAY = 1  # 初回リトライ待機時間（秒）
 
