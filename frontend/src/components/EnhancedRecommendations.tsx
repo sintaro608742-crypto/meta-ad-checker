@@ -322,7 +322,15 @@ const ImageImprovementSection = ({ imageImprovement }: { imageImprovement: Image
   const [expanded, setExpanded] = useState(true);
   const textOverlay = imageImprovement.text_overlay;
 
+  // 画像がない場合（textOverlayがnull/undefinedまたはcurrent_percentageが0以下で内容がない）は非表示
   if (!textOverlay && imageImprovement.content_issues.length === 0) {
+    return null;
+  }
+
+  // current_percentageが0%で、削除提案もない場合は非表示（画像がない可能性が高い）
+  if (textOverlay && textOverlay.current_percentage === 0 &&
+      (!textOverlay.removal_suggestions || textOverlay.removal_suggestions.length === 0) &&
+      imageImprovement.content_issues.length === 0) {
     return null;
   }
 
