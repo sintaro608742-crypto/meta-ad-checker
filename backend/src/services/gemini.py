@@ -64,6 +64,7 @@ class GeminiService:
         self,
         prompt: str,
         image_data: Optional[bytes] = None,
+        images: Optional[list] = None,  # List[bytes] - 複数画像対応
         temperature: float = 0.3,
     ) -> str:
         """
@@ -71,7 +72,8 @@ class GeminiService:
 
         Args:
             prompt: プロンプト文字列
-            image_data: 画像のバイナリデータ（オプション）
+            image_data: 画像のバイナリデータ（オプション、後方互換性のため残す）
+            images: 複数画像のバイナリデータリスト（オプション）
             temperature: 生成温度（0.0-1.0、デフォルト: 0.3）
 
         Returns:
@@ -82,11 +84,16 @@ class GeminiService:
             ServiceUnavailableError: タイムアウト
             ExternalAPIError: その他のAPIエラー
         """
+        # 複数画像とimage_dataを統合
+        all_images = images or []
+        if image_data and image_data not in all_images:
+            all_images = [image_data] + all_images
+
         for attempt in range(MAX_RETRIES):
             try:
                 # タイムアウト付きでAPI呼び出し
                 result = await asyncio.wait_for(
-                    self._call_gemini_api(prompt, image_data, temperature),
+                    self._call_gemini_api(prompt, all_images, temperature),
                     timeout=GEMINI_TIMEOUT
                 )
                 return result
@@ -135,7 +142,7 @@ class GeminiService:
     async def _call_gemini_api(
         self,
         prompt: str,
-        image_data: Optional[bytes] = None,
+        images: Optional[list] = None,  # List[bytes] - 複数画像対応
         temperature: float = 0.3,
     ) -> str:
         """
@@ -143,7 +150,7 @@ class GeminiService:
 
         Args:
             prompt: プロンプト文字列
-            image_data: 画像のバイナリデータ（オプション）
+            images: 画像のバイナリデータリスト（オプション）
             temperature: 生成温度（0.0-1.0）
 
         Returns:
@@ -195,13 +202,17 @@ class GeminiService:
             # コンテンツの準備
             contents = []
 
-            # 画像がある場合は追加
-            if image_data:
-                # PILで画像を開く
+            # 画像がある場合は追加（複数対応）
+            if images:
                 from PIL import Image
                 import io
-                image = Image.open(io.BytesIO(image_data))
-                contents.append(image)
+                for idx, img_data in enumerate(images[:3]):  # 最大3枚まで
+                    try:
+                        image = Image.open(io.BytesIO(img_data))
+                        contents.append(image)
+                        logger.info(f"Added image {idx + 1} to contents: {image.size}")
+                    except Exception as e:
+                        logger.warning(f"Failed to open image {idx + 1}: {str(e)}")
 
             # プロンプトを追加
             contents.append(prompt)

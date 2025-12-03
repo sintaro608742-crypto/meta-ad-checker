@@ -74,6 +74,7 @@ def build_meta_ad_review_prompt(
     page_title: Optional[str] = None,
     page_description: Optional[str] = None,
     page_text: Optional[str] = None,
+    image_count: int = 0,
 ) -> str:
     """
     Meta広告審査用のプロンプトを構築
@@ -87,6 +88,7 @@ def build_meta_ad_review_prompt(
         page_title: ページタイトル（OGP/title）
         page_description: ページ説明（OGP/meta description）
         page_text: ページ本文テキスト
+        image_count: 画像の枚数
 
     Returns:
         str: 構築されたプロンプト
@@ -114,8 +116,15 @@ def build_meta_ad_review_prompt(
 
     ad_text = "\n\n".join(ad_text_parts) if ad_text_parts else "（テキストなし）"
 
-    # 画像の有無
-    if page_url and has_image:
+    # 画像の有無と枚数に応じた指示
+    if page_url and image_count > 1:
+        image_note = f"""※ ランディングページから{image_count}枚の画像が添付されています（OGP画像＋主要画像）。
+- **すべての画像を分析**してください
+- 各画像の内容（テキスト量、コンテンツ）を確認してください
+- 全体として最も問題のある画像のテキスト量をtext_overlay_percentageに設定してください
+- 画像内にテキストが見える場合は、必ず0%より大きい値を設定してください
+- image_improvementには、問題のある画像についての改善提案を含めてください"""
+    elif page_url and has_image:
         image_note = """※ OGP画像（ランディングページのシェア画像）が添付されています。
 - 画像内のテキスト量を0-100%で正確に推定してください
 - 画像内にテキストが見える場合は、必ず0%より大きい値を設定してください

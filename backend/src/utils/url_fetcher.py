@@ -8,7 +8,7 @@ URLからOGP情報、ページテキスト、画像を取得
 
 import logging
 import httpx
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
@@ -22,6 +22,13 @@ logger = logging.getLogger(__name__)
 # --------------------------------------------
 
 @dataclass
+class PageImage:
+    """ページから取得した画像"""
+    url: str
+    data: bytes
+    source: str  # 'ogp', 'hero', 'main'
+
+@dataclass
 class PageData:
     """ページから取得したデータ"""
     url: str
@@ -30,6 +37,8 @@ class PageData:
     og_image_url: Optional[str] = None
     og_image_data: Optional[bytes] = None
     page_text: Optional[str] = None
+    # 主要画像リスト（OGP画像を含む）
+    images: Optional[List[PageImage]] = None
 
 
 # --------------------------------------------
@@ -117,11 +126,35 @@ async def fetch_page_data(url: str, timeout: float = 15.0) -> PageData:
             # ページテキストを抽出
             page_data.page_text = _extract_page_text(soup)
 
+            # 画像リストを初期化
+            page_data.images = []
+
             # OGP画像を取得
             if page_data.og_image_url:
                 page_data.og_image_data = await _fetch_image(client, page_data.og_image_url)
+                if page_data.og_image_data:
+                    page_data.images.append(PageImage(
+                        url=page_data.og_image_url,
+                        data=page_data.og_image_data,
+                        source='ogp'
+                    ))
 
-            logger.info(f"Page data fetched successfully: title={page_data.title}, has_og_image={page_data.og_image_data is not None}")
+            # LP内の主要画像を取得（最大2枚追加）
+            main_image_urls = _extract_main_images(soup, url, max_images=2)
+            for img_url in main_image_urls:
+                # OGP画像と重複しない場合のみ取得
+                if img_url != page_data.og_image_url:
+                    img_data = await _fetch_image(client, img_url)
+                    if img_data:
+                        page_data.images.append(PageImage(
+                            url=img_url,
+                            data=img_data,
+                            source='main'
+                        ))
+                        if len(page_data.images) >= 3:  # 合計3枚まで
+                            break
+
+            logger.info(f"Page data fetched successfully: title={page_data.title}, images={len(page_data.images)}")
 
             return page_data
 
@@ -186,6 +219,95 @@ def _extract_metadata(soup: BeautifulSoup, base_url: str) -> PageData:
         page_data.og_image_url = urljoin(base_url, image_url)
 
     return page_data
+
+
+def _extract_main_images(soup: BeautifulSoup, base_url: str, max_images: int = 2) -> List[str]:
+    """
+    LP内の主要画像URLを抽出
+
+    Args:
+        soup: BeautifulSoupオブジェクト
+        base_url: ベースURL（相対パス解決用）
+        max_images: 取得する最大画像数
+
+    Returns:
+        List[str]: 画像URLのリスト
+    """
+    image_urls = []
+
+    # 1. hero/mainセクション内の画像を優先
+    hero_selectors = [
+        'header img',
+        'section img',
+        '.hero img',
+        '.main-visual img',
+        '.mv img',
+        '.kv img',
+        '.top img',
+        '.banner img',
+        '[class*="hero"] img',
+        '[class*="main"] img',
+        '[class*="visual"] img',
+    ]
+
+    for selector in hero_selectors:
+        try:
+            for img in soup.select(selector)[:3]:
+                src = img.get('src') or img.get('data-src')
+                if src and _is_valid_image_url(src):
+                    full_url = urljoin(base_url, src)
+                    if full_url not in image_urls:
+                        image_urls.append(full_url)
+                        if len(image_urls) >= max_images:
+                            return image_urls
+        except Exception:
+            continue
+
+    # 2. 大きな画像を探す（width/height属性がある場合）
+    for img in soup.find_all('img')[:20]:
+        src = img.get('src') or img.get('data-src')
+        if not src or not _is_valid_image_url(src):
+            continue
+
+        # サイズ属性をチェック
+        width = img.get('width', '')
+        height = img.get('height', '')
+        try:
+            w = int(str(width).replace('px', ''))
+            h = int(str(height).replace('px', ''))
+            if w >= 300 or h >= 200:  # 比較的大きな画像
+                full_url = urljoin(base_url, src)
+                if full_url not in image_urls:
+                    image_urls.append(full_url)
+                    if len(image_urls) >= max_images:
+                        return image_urls
+        except (ValueError, TypeError):
+            pass
+
+    # 3. それでも見つからない場合、最初の数枚の画像を取得
+    for img in soup.find_all('img')[:10]:
+        src = img.get('src') or img.get('data-src')
+        if src and _is_valid_image_url(src):
+            full_url = urljoin(base_url, src)
+            if full_url not in image_urls:
+                image_urls.append(full_url)
+                if len(image_urls) >= max_images:
+                    return image_urls
+
+    return image_urls
+
+
+def _is_valid_image_url(url: str) -> bool:
+    """画像URLとして有効かチェック"""
+    if not url:
+        return False
+    # data:URLやsvgは除外
+    if url.startswith('data:'):
+        return False
+    # 小さなアイコン系を除外
+    lower_url = url.lower()
+    exclude_patterns = ['icon', 'logo', 'favicon', 'sprite', 'loading', 'placeholder', '.svg', '.gif']
+    return not any(pattern in lower_url for pattern in exclude_patterns)
 
 
 def _extract_page_text(soup: BeautifulSoup, max_length: int = 5000) -> str:

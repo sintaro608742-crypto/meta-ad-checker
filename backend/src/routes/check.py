@@ -85,6 +85,7 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
     page_title: Optional[str] = None
     page_description: Optional[str] = None
     page_text: Optional[str] = None
+    page_images: list = []  # LP内の複数画像
 
     if request.page_url:
         logger.info(f"Fetching page data from URL: {request.page_url}")
@@ -94,12 +95,17 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
         page_description = page_data.description
         page_text = page_data.page_text
 
-        # OGP画像がある場合、画像として使用（既存画像がない場合のみ）
+        # LP内の画像を取得（OGP画像 + 主要画像）
+        if page_data.images:
+            page_images = [img.data for img in page_data.images]
+            logger.info(f"Found {len(page_images)} images from LP")
+
+        # OGP画像がある場合、image_dataにも設定（後方互換性）
         if page_data.og_image_data and not image_data:
             logger.info(f"Using OGP image: {len(page_data.og_image_data)/1024:.2f}KB")
             image_data = page_data.og_image_data
 
-        logger.info(f"Page data fetched: title={page_title}, has_og_image={image_data is not None}")
+        logger.info(f"Page data fetched: title={page_title}, images={len(page_images)}")
         # デバッグ用: 取得したページテキストの先頭500文字を出力
         if page_text:
             logger.debug(f"Page text preview (first 500 chars): {page_text[:500]}")
@@ -107,23 +113,31 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
     # --------------------------------------------
     # 3. Gemini APIへのリクエスト送信
     # --------------------------------------------
+    # 画像の統合（アップロード画像 + LP内画像）
+    all_images = page_images.copy() if page_images else []
+    if image_data and image_data not in all_images:
+        all_images.insert(0, image_data)  # アップロード画像を先頭に
+
+    has_images = len(all_images) > 0
+
     logger.info("Building prompt for Gemini API...")
     prompt = build_meta_ad_review_prompt(
         headline=request.headline,
         description=request.description,
         cta=request.cta,
-        has_image=image_data is not None,
+        has_image=has_images,
         page_url=request.page_url,
         page_title=page_title,
         page_description=page_description,
         page_text=page_text,
+        image_count=len(all_images),  # 画像枚数を渡す
     )
 
-    logger.info("Calling Gemini API...")
+    logger.info(f"Calling Gemini API with {len(all_images)} images...")
     gemini_service = GeminiService()
     ai_response_text = await gemini_service.generate_content_with_retry(
         prompt=prompt,
-        image_data=image_data,
+        images=all_images if all_images else None,
         temperature=0.3,
     )
 
