@@ -21,7 +21,7 @@ class ApiClient {
 
     this.client = axios.create({
       baseURL: apiUrl,
-      timeout: 30000, // 30秒（CLAUDE.md準拠）
+      timeout: 120000, // 120秒（複数画像処理対応）
       headers: {
         'Content-Type': 'application/json',
       },
