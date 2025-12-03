@@ -10,7 +10,6 @@ import {
   CircularProgress,
   Chip,
   IconButton,
-  LinearProgress,
 } from '@mui/material';
 import { apiClient } from '../services/ApiClient';
 import { useDropzone } from 'react-dropzone';
@@ -118,43 +117,10 @@ export const AdCheckerPage = () => {
 
   return (
     <PublicLayout maxWidth="lg" showBackground={false}>
-      {/* バックエンド起動中の表示 */}
-      {backendStatus === 'checking' && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            bgcolor: '#059669',
-            color: 'white',
-            py: 1.5,
-            px: 2,
-            textAlign: 'center',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-            <CircularProgress size={20} sx={{ color: 'white' }} />
-            <Typography sx={{ fontWeight: 600 }}>
-              サーバーを準備中です...（初回は最大1分ほどかかる場合があります）
-            </Typography>
-          </Box>
-          <LinearProgress
-            sx={{
-              mt: 1,
-              bgcolor: 'rgba(255,255,255,0.3)',
-              '& .MuiLinearProgress-bar': { bgcolor: 'white' },
-            }}
-          />
-        </Box>
-      )}
-
       <Box
         sx={{
           py: 6,
           px: 3,
-          pt: backendStatus === 'checking' ? 12 : 6, // 起動中はパディング追加
           background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 50%, #e0f2fe 100%)',
           minHeight: 'calc(100vh - 64px)',
         }}
@@ -360,6 +326,21 @@ export const AdCheckerPage = () => {
 
         {/* チェック実行ボタン */}
         <Paper elevation={2} sx={{ p: 4, borderRadius: 4, mb: 3 }}>
+          {/* バックエンド起動中の表示 */}
+          {backendStatus === 'checking' && (
+            <Alert
+              severity="info"
+              icon={<CircularProgress size={20} />}
+              sx={{
+                mb: 2,
+                bgcolor: '#e0f2fe',
+                '& .MuiAlert-icon': { color: '#0284c7' },
+              }}
+            >
+              サーバーを準備中です...（初回は最大1分ほどかかる場合があります）
+            </Alert>
+          )}
+
           <Button
             fullWidth
             variant="contained"
