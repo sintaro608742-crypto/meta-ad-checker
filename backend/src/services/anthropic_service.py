@@ -96,7 +96,7 @@ class AnthropicService:
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY is not set")
 
-        self.client = anthropic.Anthropic(api_key=self.api_key)
+        self.client = anthropic.AsyncAnthropic(api_key=self.api_key)
         logger.info(f"AnthropicService initialized with model: {CLAUDE_MODEL}")
 
     async def generate_content_with_retry(
@@ -205,16 +205,12 @@ class AnthropicService:
         # テキストプロンプト追加
         content.append({"type": "text", "text": prompt})
 
-        # 同期APIを非同期で実行
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: self.client.messages.create(
-                model=CLAUDE_MODEL,
-                max_tokens=8192,
-                temperature=temperature,
-                messages=[{"role": "user", "content": content}],
-            ),
+        # 非同期APIで直接呼び出し
+        response = await self.client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=8192,
+            temperature=temperature,
+            messages=[{"role": "user", "content": content}],
         )
 
         # レスポンスからテキスト抽出
