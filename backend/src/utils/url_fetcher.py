@@ -112,6 +112,7 @@ async def fetch_page_data(url: str, timeout: float = 15.0) -> PageData:
         async with httpx.AsyncClient(
             timeout=timeout,
             follow_redirects=True,
+            verify=False,
             headers={
                 'User-Agent': 'Mozilla/5.0 (compatible; MetaAdChecker/1.0)'
             }
