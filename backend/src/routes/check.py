@@ -27,7 +27,7 @@ from ..types import (
     ImageImprovementContentIssue,
 )
 from ..utils.url_fetcher import fetch_page_data
-from ..services import GeminiService, ModerationService, build_meta_ad_review_prompt
+from ..services import AnthropicService, ModerationService, build_meta_ad_review_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
     # --------------------------------------------
     has_images = len(page_images) > 0
 
-    logger.info("Building prompt for Gemini API...")
+    logger.info("Building prompt for Claude API...")
     prompt = build_meta_ad_review_prompt(
         headline=None,
         description=None,
@@ -100,9 +100,9 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
         image_count=len(page_images),
     )
 
-    logger.info(f"Calling Gemini API with {len(page_images)} images...")
-    gemini_service = GeminiService()
-    ai_response_text = await gemini_service.generate_content_with_retry(
+    logger.info(f"Calling Claude API with {len(page_images)} images...")
+    anthropic_service = AnthropicService()
+    ai_response_text = await anthropic_service.generate_content_with_retry(
         prompt=prompt,
         images=page_images if page_images else None,
         temperature=0.3,
@@ -112,7 +112,7 @@ async def check_advertisement(request: AdCheckRequest) -> AdCheckResponse:
     # 3. AI応答の解析
     # --------------------------------------------
     logger.info("Parsing AI response...")
-    ai_response = gemini_service.parse_json_response(ai_response_text)
+    ai_response = anthropic_service.parse_json_response(ai_response_text)
 
     # --------------------------------------------
     # 4. 補助チェック（OpenAI Moderation API - オプション）
@@ -387,6 +387,6 @@ def _build_response_from_ai_result(
         text_overlay_percentage=ai_result.get("text_overlay_percentage"),
         nsfw_detected=nsfw_detected,
         prohibited_content=prohibited_content,
-        api_used="gemini-2.0-flash",
+        api_used="claude-sonnet-4",
         image_improvement=image_improvement,
     )

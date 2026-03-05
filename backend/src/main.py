@@ -37,11 +37,11 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {os.getenv('ENVIRONMENT', 'development')}")
 
     # 環境変数の検証
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
-        logger.warning("⚠️ GEMINI_API_KEY not set. AI features will be unavailable.")
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    if not anthropic_key:
+        logger.warning("⚠️ ANTHROPIC_API_KEY not set. AI features will be unavailable.")
     else:
-        logger.info("✅ GEMINI_API_KEY configured")
+        logger.info("✅ ANTHROPIC_API_KEY configured")
 
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
