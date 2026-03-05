@@ -15,7 +15,7 @@ import logging
 from typing import Optional, Dict, Any, List
 from collections import deque
 
-import anthropic
+import httpx
 
 from ..utils.errors import (
     ExternalAPIError,
@@ -96,7 +96,6 @@ class AnthropicService:
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY is not set")
 
-        self.client = anthropic.AsyncAnthropic(api_key=self.api_key)
         logger.info(f"AnthropicService initialized with model: {CLAUDE_MODEL}")
 
     async def generate_content_with_retry(
@@ -205,23 +204,40 @@ class AnthropicService:
         # テキストプロンプト追加
         content.append({"type": "text", "text": prompt})
 
-        # 非同期APIで直接呼び出し
-        response = await self.client.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=8192,
-            temperature=temperature,
-            messages=[{"role": "user", "content": content}],
-        )
+        # httpxで直接Anthropic APIを呼び出し（SSL検証無効でVercel互換性確保）
+        async with httpx.AsyncClient(verify=False, timeout=CLAUDE_TIMEOUT) as http_client:
+            response = await http_client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": self.api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": CLAUDE_MODEL,
+                    "max_tokens": 8192,
+                    "temperature": temperature,
+                    "messages": [{"role": "user", "content": content}],
+                },
+            )
 
-        # レスポンスからテキスト抽出
-        if response.content and len(response.content) > 0:
-            result_text = response.content[0].text
+        if response.status_code != 200:
+            error_body = response.text
+            logger.error(f"Claude API error: {response.status_code} {error_body[:300]}")
+            raise ExternalAPIError(
+                message="AI審査の実行中にエラーが発生しました。",
+                details={"status_code": response.status_code, "error": error_body[:200]},
+            )
+
+        result = response.json()
+        if result.get("content") and len(result["content"]) > 0:
+            result_text = result["content"][0]["text"]
             logger.debug(f"Claude API response received: {len(result_text)} characters")
             return result_text
 
         raise ExternalAPIError(
             message="AI審査の結果が空でした。",
-            details={"stop_reason": response.stop_reason},
+            details={"stop_reason": result.get("stop_reason")},
         )
 
     def _detect_media_type(self, image_data: bytes) -> str:
